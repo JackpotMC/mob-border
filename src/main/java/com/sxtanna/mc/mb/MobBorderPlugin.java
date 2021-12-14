@@ -19,6 +19,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
@@ -83,7 +84,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onMove(@NotNull final EntityMoveEvent event) {
+    public void onEntityMove(@NotNull final EntityMoveEvent event) {
         final var entity = this.entity;
         if (entity == null || !entity.uuid().equals(event.getEntity().getUniqueId()) || !event.hasExplicitlyChangedBlock()) {
             return;
@@ -95,6 +96,22 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
 
         event.getEntity().getWorld().getWorldBorder().setCenter(event.getTo());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerMove(@NotNull final PlayerMoveEvent event) {
+        final var entity  = this.entity;
+        final var vehicle = event.getPlayer().getVehicle();
+        if (vehicle == null || entity == null || !entity.uuid().equals(vehicle.getUniqueId()) || !event.hasExplicitlyChangedBlock()) {
+            return;
+        }
+
+        if (!event.getFrom().getWorld().equals(event.getTo().getWorld())) {
+            event.setCancelled(true); // don't do this kids
+            return;
+        }
+
+        vehicle.getWorld().getWorldBorder().setCenter(event.getTo());
     }
 
 
