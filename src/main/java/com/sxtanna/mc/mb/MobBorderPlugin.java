@@ -1,5 +1,7 @@
 package com.sxtanna.mc.mb;
 
+import co.aikar.commands.PaperCommandManager;
+import com.sxtanna.mc.mb.cmds.MobBorderCommand;
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
 import com.sxtanna.mc.mb.conf.sections.EntitySettings;
@@ -57,6 +59,14 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         findMobBorderEntity();
         loadMobBorderEntity();
 
+
+        final var manager = new PaperCommandManager(this);
+
+        manager.enableUnstableAPI("help");
+        manager.enableUnstableAPI("brigadier");
+        manager.usePerIssuerLocale(true, true);
+
+        manager.registerCommand(new MobBorderCommand(this));
     }
 
     @Override
