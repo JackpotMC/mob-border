@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.WorldBorder;
+import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
@@ -130,25 +131,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        final var entity = origin.getWorld().spawnEntity(origin,
-                                                         getConfiguration().get(EntitySettings.ENTITY_TYPE));
-
-        entity.getPersistentDataContainer()
-              .set(namespace, PersistentDataType.PrimitivePersistentDataType.BYTE, ((byte) 1));
-
-
-        final var name = getConfiguration().get(EntitySettings.ENTITY_NAME);
-
-        if (name.isBlank()) {
-            entity.setCustomNameVisible(false);
-            entity.customName(Component.empty());
-        } else {
-            entity.setCustomNameVisible(true);
-            entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(name));
-        }
-
-        entity.setInvulnerable(true);
-        entity.setSilent(getConfiguration().get(EntitySettings.ENTITY_SILENT));
+        final var entity = origin.getWorld().spawnEntity(origin, getConfiguration().get(EntitySettings.ENTITY_TYPE));
+        updateEntityValues(entity);
 
         final var border = entity.getWorld().getWorldBorder();
         border.setCenter(origin);
@@ -176,6 +160,25 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         getConfiguration().save();
     }
 
+
+    public void updateEntityValues(@NotNull final Entity entity) {
+        entity.getPersistentDataContainer()
+              .set(namespace, PersistentDataType.PrimitivePersistentDataType.BYTE, ((byte) 1));
+
+
+        final var name = getConfiguration().get(EntitySettings.ENTITY_NAME);
+
+        if (name.isBlank()) {
+            entity.setCustomNameVisible(false);
+            entity.customName(Component.empty());
+        } else {
+            entity.setCustomNameVisible(true);
+            entity.customName(LegacyComponentSerializer.legacyAmpersand().deserialize(name));
+        }
+
+        entity.setInvulnerable(true);
+        entity.setSilent(getConfiguration().get(EntitySettings.ENTITY_SILENT));
+    }
 
     public void updateWorldBorderValues(@NotNull final WorldBorder border) {
         border.setSize(getConfiguration().get(BorderSettings.BORDER_SIZE));
