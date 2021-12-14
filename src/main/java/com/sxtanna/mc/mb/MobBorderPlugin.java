@@ -2,7 +2,10 @@ package com.sxtanna.mc.mb;
 
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
+import io.papermc.paper.event.entity.EntityMoveEvent;
 import org.bukkit.NamespacedKey;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -49,6 +52,22 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         HandlerList.unregisterAll(((Listener) this));
 
         INSTANCE = null;
+    }
+
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMove(@NotNull final EntityMoveEvent event) {
+        final var entity = this.entity;
+        if (entity == null || !entity.uuid().equals(event.getEntity().getUniqueId()) || !event.hasExplicitlyChangedBlock()) {
+            return;
+        }
+
+        if (!event.getFrom().getWorld().equals(event.getTo().getWorld())) {
+            event.setCancelled(true); // don't do this kids
+            return;
+        }
+
+        event.getEntity().getWorld().getWorldBorder().setCenter(event.getTo());
     }
 
 
