@@ -19,4 +19,7 @@ public final class EntitySettings implements SettingsHolder {
     public static final Property<String> ENTITY_NAME =
             newProperty("entity.name", "&cPiggy");
 
+    public static final Property<Boolean> ENTITY_SILENT =
+            newProperty("entity.silent", false);
+
 }
