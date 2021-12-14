@@ -1,6 +1,8 @@
 package com.sxtanna.mc.mb;
 
 import com.sxtanna.mc.mb.conf.Config;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -8,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public final class MobBorderPlugin extends JavaPlugin {
+public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @Nullable
     private static MobBorderPlugin INSTANCE;
@@ -30,11 +32,13 @@ public final class MobBorderPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
+        this.getServer().getPluginManager().registerEvents(this, this);
     }
 
     @Override
     public void onDisable() {
+        HandlerList.unregisterAll(((Listener) this));
+
         INSTANCE = null;
     }
 
