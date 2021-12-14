@@ -9,7 +9,7 @@ import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Entity;
+import org.bukkit.WorldBorder;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
@@ -140,6 +140,11 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         entity.setInvulnerable(true);
         entity.setSilent(getConfiguration().get(EntitySettings.ENTITY_SILENT));
 
+        final var border = entity.getWorld().getWorldBorder();
+        border.setCenter(origin);
+
+        updateWorldBorderValues(border);
+
         this.entity = new MobBorderEntity(entity.getUniqueId());
 
         getConfiguration().setProperty(EntitySettings.ENTITY_UUID, entity.getUniqueId().toString());
@@ -148,12 +153,24 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     public void killMobBorderEntity() {
         getEntity().flatMap(MobBorderEntity::live)
-                   .ifPresent(Entity::remove);
+                   .ifPresent(entity -> {
+
+                       entity.getWorld().getWorldBorder().reset();
+                       entity.remove();
+
+                   });
 
         this.entity = null;
 
         getConfiguration().setProperty(EntitySettings.ENTITY_UUID, "");
         getConfiguration().save();
+    }
+
+
+    public void updateWorldBorderValues(@NotNull final WorldBorder border) {
+        border.setSize(getConfiguration().get(BorderSettings.BORDER_SIZE));
+        border.setDamageBuffer(getConfiguration().get(BorderSettings.BORDER_DIST_HURT));
+        border.setWarningDistance(getConfiguration().get(BorderSettings.BORDER_DIST_WARN));
     }
 
 }
