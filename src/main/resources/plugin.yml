@@ -1,0 +1,8 @@
+name: "JMCMobBorder"
+main: "com.sxtanna.mc.mb.MobBorderPlugin"
+
+version: "$version"
+authors: ["Sxtanna"]
+
+api-version: "1.18"
+description: "Mob Tracking World Border"
