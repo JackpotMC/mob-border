@@ -10,6 +10,7 @@ import co.aikar.commands.annotation.HelpCommand;
 import co.aikar.commands.annotation.Subcommand;
 import com.sxtanna.mc.mb.MobBorderPlugin;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
+import com.sxtanna.mc.mb.conf.sections.EntitySettings;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.util.LocationCodec;
 import org.bukkit.World;
@@ -74,6 +75,51 @@ public final class MobBorderCommand extends BaseCommand {
                    .map(Entity::getWorld)
                    .map(World::getWorldBorder)
                    .ifPresent(this.plugin::updateWorldBorderValues);
+    }
+
+
+    @Subcommand("entity rename")
+    @CommandPermission("jmc.mobborder.entity.rename")
+    public void silent(@NotNull final CommandSender sender, @NotNull final String name) {
+        this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_NAME, name);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateEntityValues);
+    }
+
+    @Subcommand("entity silent")
+    @CommandPermission("jmc.mobborder.entity.silent")
+    public void silent(@NotNull final CommandSender sender, @Default("false") final boolean silent) {
+        this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_SILENT, silent);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateEntityValues);
+    }
+
+    @Subcommand("entity glowing")
+    @CommandPermission("jmc.mobborder.entity.glowing")
+    public void glowing(@NotNull final CommandSender sender, @Default("true") final boolean glowing) {
+        this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_GLOWING, glowing);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateEntityValues);
+    }
+
+    @Subcommand("entity speed")
+    @CommandPermission("jmc.mobborder.entity.speed")
+    public void speed(@NotNull final CommandSender sender, @Default("0.25") @Flags("min=0.0,max=1024.0") final double speed) {
+        this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_SPEED, speed);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateEntityValues);
     }
 
 }
