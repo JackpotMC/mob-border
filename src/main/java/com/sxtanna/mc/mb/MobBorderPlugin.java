@@ -1,6 +1,7 @@
 package com.sxtanna.mc.mb;
 
 import com.sxtanna.mc.mb.conf.Config;
+import com.sxtanna.mc.mb.data.MobBorderEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
@@ -23,6 +25,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @NotNull
     private final Config configuration = new Config(getDataFolder().toPath().resolve("config.yml"));
+
+
+    @Nullable
+    private MobBorderEntity entity;
 
 
     @Override
@@ -46,6 +52,12 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     @Contract(pure = true)
     public @NotNull Config getConfiguration() {
         return this.configuration;
+    }
+
+
+    @Contract(pure = true)
+    public @NotNull Optional<MobBorderEntity> getEntity() {
+        return Optional.ofNullable(this.entity);
     }
 
 }
