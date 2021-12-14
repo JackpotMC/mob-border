@@ -12,7 +12,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.WorldBorder;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
@@ -178,6 +180,15 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         entity.setInvulnerable(true);
         entity.setSilent(getConfiguration().get(EntitySettings.ENTITY_SILENT));
+
+        entity.setGlowing(getConfiguration().get(EntitySettings.ENTITY_GLOWING));
+
+        if (entity instanceof LivingEntity living) {
+            final var speed = living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+            if (speed != null) {
+                speed.setBaseValue(getConfiguration().get(EntitySettings.ENTITY_SPEED));
+            }
+        }
     }
 
     public void updateWorldBorderValues(@NotNull final WorldBorder border) {
