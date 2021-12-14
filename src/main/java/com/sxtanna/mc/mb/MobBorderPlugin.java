@@ -1,5 +1,6 @@
 package com.sxtanna.mc.mb;
 
+import com.sxtanna.mc.mb.conf.Config;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,10 @@ public final class MobBorderPlugin extends JavaPlugin {
     }
 
 
+    @NotNull
+    private final Config configuration = new Config(getDataFolder().toPath().resolve("config.yml"));
+
+
     @Override
     public void onLoad() {
         INSTANCE = this;
@@ -31,6 +36,12 @@ public final class MobBorderPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         INSTANCE = null;
+    }
+
+
+    @Contract(pure = true)
+    public @NotNull Config getConfiguration() {
+        return this.configuration;
     }
 
 }
