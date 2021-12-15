@@ -174,7 +174,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         for (final var itemEntity : event.getItems()) {
             for (final var change : changes) {
-                if (ThreadLocalRandom.current().nextDouble(0.0, 100.0) > Math.max(0.0, Math.min(100.0, change.chance()))) {
+                if (ThreadLocalRandom.current().nextDouble(0.0, 100.0) > Math.max(0.0, Math.min(100.0, change.getChance()))) {
                     continue;
                 }
 
@@ -184,9 +184,9 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                     continue;
                 }
 
-                final var drop = change.drops();
+                final var drop = change.getDrops();
 
-                switch (change.mode()) {
+                switch (change.getMode()) {
                     case ADD -> {
                         final var next = drop.toBukkit();
 
@@ -197,10 +197,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                         added.add(next);
                     }
                     case SET -> {
-                        prev.setType(drop.type());
+                        prev.setType(drop.getType());
 
-                        if (drop.amount() != -1) {
-                            prev.setAmount(drop.amount());
+                        if (drop.getAmount() != -1) {
+                            prev.setAmount(drop.getAmount());
                         }
 
                         itemEntity.setItemStack(prev);

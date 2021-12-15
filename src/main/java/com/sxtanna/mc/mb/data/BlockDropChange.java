@@ -7,14 +7,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
-public record BlockDropChange(@NotNull Mode mode,
-
-                              double chance,
-
-                              @NotNull List<Drop> match,
-                              @NotNull Drop drops) {
-
+public final class BlockDropChange {
 
     @Contract("_, _ -> new")
     public static @NotNull BlockDropChange add(@NotNull final Drop drop, @NotNull final Drop... match) {
@@ -47,8 +42,84 @@ public record BlockDropChange(@NotNull Mode mode,
     }
 
 
+    private @NotNull Mode       mode;
+    private          double     chance;
+    private @NotNull List<Drop> match;
+    private @NotNull Drop       drops;
+
+    public BlockDropChange(@NotNull Mode mode,
+
+                           double chance,
+
+                           @NotNull List<Drop> match,
+                           @NotNull Drop drops) {
+        this.mode   = mode;
+        this.chance = chance;
+        this.match  = match;
+        this.drops  = drops;
+    }
+
+
     public boolean applicable(@NotNull final ItemStack item) {
-        return this.match().stream().anyMatch(drop -> drop.applicable(item));
+        return this.getMatch().stream().anyMatch(drop -> drop.applicable(item));
+    }
+
+    public Mode getMode() {
+        return mode;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
+    public double getChance() {
+        return chance;
+    }
+
+    public void setChance(double chance) {
+        this.chance = chance;
+    }
+
+    public List<Drop> getMatch() {
+        return match;
+    }
+
+    public void setMatch(List<Drop> match) {
+        this.match = match;
+    }
+
+    public Drop getDrops() {
+        return drops;
+    }
+
+    public void setDrops(Drop drops) {
+        this.drops = drops;
+    }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj == null || obj.getClass() != this.getClass()) return false;
+        var that = (BlockDropChange) obj;
+        return Objects.equals(this.mode, that.mode) &&
+               Double.doubleToLongBits(this.chance) == Double.doubleToLongBits(that.chance) &&
+               Objects.equals(this.match, that.match) &&
+               Objects.equals(this.drops, that.drops);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mode, chance, match, drops);
+    }
+
+    @Override
+    public String toString() {
+        return "BlockDropChange[" +
+               "mode=" + mode + ", " +
+               "chance=" + chance + ", " +
+               "match=" + match + ", " +
+               "drops=" + drops + ']';
     }
 
 
@@ -57,8 +128,7 @@ public record BlockDropChange(@NotNull Mode mode,
         SET,
     }
 
-    public record Drop(@NotNull Material type, int amount) {
-
+    public static final class Drop {
 
         @Contract("_ -> new")
         public static @NotNull Drop of(@NotNull final Material type) {
@@ -71,13 +141,61 @@ public record BlockDropChange(@NotNull Mode mode,
         }
 
 
+        private @NotNull Material type;
+        private          int      amount;
+
+        public Drop(@NotNull Material type, int amount) {
+            this.type   = type;
+            this.amount = amount;
+        }
+
+
+        public Material getType() {
+            return type;
+        }
+
+        public void setType(Material type) {
+            this.type = type;
+        }
+
+        public int getAmount() {
+            return amount;
+        }
+
+        public void setAmount(int amount) {
+            this.amount = amount;
+        }
+
+
         @Contract(" -> new")
         public @NotNull ItemStack toBukkit() {
-            return new ItemStack(this.type(), this.amount());
+            return new ItemStack(this.getType(), this.getAmount());
         }
 
         public boolean applicable(@NotNull final ItemStack item) {
-            return item.getType() == this.type() && (this.amount() == -1 || item.getAmount() == this.amount());
+            return item.getType() == this.getType() && (this.getAmount() == -1 || item.getAmount() == this.getAmount());
+        }
+
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            var that = (Drop) obj;
+            return Objects.equals(this.type, that.type) &&
+                   this.amount == that.amount;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, amount);
+        }
+
+        @Override
+        public String toString() {
+            return "Drop[" +
+                   "type=" + type + ", " +
+                   "amount=" + amount + ']';
         }
 
     }
