@@ -24,18 +24,23 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
@@ -140,6 +145,55 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
             event.setCancelled(true);
         }
+    }
+
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(@NotNull final BlockDropItemEvent event) {
+        final var added = new ArrayList<ItemStack>();
+
+        for (final var itemEntity : event.getItems()) {
+            for (final var change : changes) {
+                if (ThreadLocalRandom.current().nextDouble(0.0, 100.0) > Math.max(0.0, Math.min(100.0, change.chance()))) {
+                    continue;
+                }
+
+                final var prev = itemEntity.getItemStack();
+
+                if (!change.applicable(prev)) {
+                    continue;
+                }
+
+                final var drop = change.drops();
+
+                switch (change.mode()) {
+                    case ADD -> {
+                        final var next = drop.toBukkit();
+
+                        if (next.getAmount() == -1) {
+                            next.setAmount(itemEntity.getItemStack().getAmount());
+                        }
+
+                        added.add(next);
+                    }
+                    case SET -> {
+                        prev.setType(drop.type());
+
+                        if (drop.amount() != -1) {
+                            prev.setAmount(drop.amount());
+                        }
+
+                        itemEntity.setItemStack(prev);
+                    }
+                }
+
+                break;
+            }
+        }
+
+        added.stream()
+             .map(item -> event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item))
+             .forEach(event.getItems()::add);
     }
 
 
