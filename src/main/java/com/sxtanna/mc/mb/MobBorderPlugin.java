@@ -22,6 +22,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.persistence.PersistentDataType;
@@ -120,6 +121,14 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPortalUsed(@NotNull final EntityPortalEvent event) {
+        final var entity = this.entity;
+        if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityHurt(@NotNull final EntityDamageEvent event) {
         final var entity = this.entity;
         if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
             event.setCancelled(true);
