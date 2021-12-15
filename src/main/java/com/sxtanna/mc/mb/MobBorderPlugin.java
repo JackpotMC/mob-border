@@ -4,7 +4,9 @@ import co.aikar.commands.PaperCommandManager;
 import com.sxtanna.mc.mb.cmds.MobBorderCommand;
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
+import com.sxtanna.mc.mb.conf.sections.ChangeSettings;
 import com.sxtanna.mc.mb.conf.sections.EntitySettings;
+import com.sxtanna.mc.mb.data.BlockDropChange;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.util.LocationCodec;
 import io.papermc.paper.event.entity.EntityMoveEvent;
@@ -53,7 +55,9 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
 
     @Nullable
-    private MobBorderEntity entity;
+    private       MobBorderEntity       entity;
+    @NotNull
+    private final List<BlockDropChange> changes = new ArrayList<>();
 
 
     @Override
@@ -67,6 +71,9 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         findMobBorderEntity();
         loadMobBorderEntity();
+
+
+        this.changes.addAll(getConfiguration().get(ChangeSettings.CHANGES).values());
 
 
         final var manager = new PaperCommandManager(this);
