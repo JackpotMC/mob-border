@@ -21,4 +21,7 @@ public final class BorderSettings implements SettingsHolder {
     public static final Property<String> BORDER_ORIGIN =
             newProperty("border.origin", "");
 
+    public static final Property<Boolean> BORDER_SCALING =
+            newProperty("border.scaling", false);
+
 }

@@ -267,7 +267,11 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
 
         if (nether != null) {
-            nether.setSize(size < 16 ? size : size / 8);
+            final var scaledSize = size < 16 || !getConfiguration().get(BorderSettings.BORDER_SCALING) ?
+                                   size :
+                                   size / 8;
+
+            nether.setSize(scaledSize);
             nether.setDamageBuffer(hurt);
             nether.setWarningDistance(warn);
         }

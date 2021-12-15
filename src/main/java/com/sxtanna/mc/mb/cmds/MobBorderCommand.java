@@ -75,6 +75,17 @@ public final class MobBorderCommand extends BaseCommand {
                    .ifPresent(this.plugin::updateWorldBorders);
     }
 
+    @Subcommand("scaling")
+    @CommandPermission("jmc.mobborder.scaling")
+    public void scaling(@NotNull final CommandSender sender, @Default("false") final boolean scaling) {
+        this.plugin.getConfiguration().setProperty(BorderSettings.BORDER_SCALING, scaling);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateWorldBorders);
+    }
+
 
     @Subcommand("entity rename")
     @CommandPermission("jmc.mobborder.entity.rename")
