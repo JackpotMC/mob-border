@@ -72,9 +72,7 @@ public final class MobBorderCommand extends BaseCommand {
 
         this.plugin.getEntity()
                    .flatMap(MobBorderEntity::live)
-                   .map(Entity::getWorld)
-                   .map(World::getWorldBorder)
-                   .ifPresent(this.plugin::updateWorldBorderValues);
+                   .ifPresent(this.plugin::updateWorldBorders);
     }
 
 

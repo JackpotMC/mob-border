@@ -10,7 +10,10 @@ import com.sxtanna.mc.mb.util.LocationCodec;
 import io.papermc.paper.event.entity.EntityMoveEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
@@ -95,7 +98,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        event.getEntity().getWorld().getWorldBorder().setCenter(event.getTo());
+        updateWorldOrigins(event.getEntity().getWorld(), event.getTo());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -111,7 +114,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        vehicle.getWorld().getWorldBorder().setCenter(event.getTo());
+        updateWorldOrigins(vehicle.getWorld(), event.getTo());
     }
 
 
@@ -152,11 +155,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         final var entity = origin.getWorld().spawnEntity(origin, getConfiguration().get(EntitySettings.ENTITY_TYPE));
         updateEntityValues(entity);
-
-        final var border = entity.getWorld().getWorldBorder();
-        border.setCenter(origin);
-
-        updateWorldBorderValues(border);
+        updateWorldBorders(entity);
 
         this.entity = new MobBorderEntity(entity.getUniqueId());
 
@@ -169,6 +168,17 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                    .ifPresent(entity -> {
 
                        entity.getWorld().getWorldBorder().reset();
+
+                       Optional.of(entity.getWorld().getName() + "_nether")
+                               .map(Bukkit::getWorld)
+                               .map(World::getWorldBorder)
+                               .ifPresent(WorldBorder::reset);
+
+                       Optional.of(entity.getWorld().getName() + "_the_end")
+                               .map(Bukkit::getWorld)
+                               .map(World::getWorldBorder)
+                               .ifPresent(WorldBorder::reset);
+
                        entity.remove();
 
                    });
@@ -208,10 +218,64 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    public void updateWorldBorderValues(@NotNull final WorldBorder border) {
-        border.setSize(getConfiguration().get(BorderSettings.BORDER_SIZE));
-        border.setDamageBuffer(getConfiguration().get(BorderSettings.BORDER_DIST_HURT));
-        border.setWarningDistance(getConfiguration().get(BorderSettings.BORDER_DIST_WARN));
+    public void updateWorldBorders(@NotNull final Entity entity) {
+        final var overworld = entity.getWorld().getWorldBorder();
+        overworld.setCenter(entity.getLocation());
+
+
+        final var nether = Optional.of(entity.getWorld().getName() + "_nether")
+                                   .map(Bukkit::getWorld)
+                                   .map(World::getWorldBorder)
+                                   .orElse(null);
+
+        if (nether != null) {
+            nether.setCenter(entity.getLocation());
+        }
+
+        final var theend = Optional.of(entity.getWorld().getName() + "_the_end")
+                                   .map(Bukkit::getWorld)
+                                   .map(World::getWorldBorder)
+                                   .orElse(null);
+
+        if (theend != null) {
+            theend.setCenter(entity.getLocation());
+        }
+
+
+        final var size = getConfiguration().get(BorderSettings.BORDER_SIZE);
+        final var hurt = getConfiguration().get(BorderSettings.BORDER_DIST_HURT);
+        final var warn = getConfiguration().get(BorderSettings.BORDER_DIST_WARN);
+
+        overworld.setSize(size);
+        overworld.setDamageBuffer(hurt);
+        overworld.setWarningDistance(warn);
+
+
+        if (theend != null) { // I'm... not sure if there is a scale on this.. ?
+            theend.setSize(size);
+            theend.setDamageBuffer(hurt);
+            theend.setWarningDistance(warn);
+        }
+
+        if (nether != null) {
+            nether.setSize(size < 16 ? size : size / 8);
+            nether.setDamageBuffer(hurt);
+            nether.setWarningDistance(warn);
+        }
+    }
+
+    public void updateWorldOrigins(@NotNull final World world, @NotNull final Location origin) {
+        world.getWorldBorder().setCenter(origin);
+
+        Optional.of(world.getName() + "_nether")
+                .map(Bukkit::getWorld)
+                .map(World::getWorldBorder)
+                .ifPresent(border -> border.setCenter(origin));
+
+        Optional.of(world.getName() + "_the_end")
+                .map(Bukkit::getWorld)
+                .map(World::getWorldBorder)
+                .ifPresent(border -> border.setCenter(origin));
     }
 
 }
