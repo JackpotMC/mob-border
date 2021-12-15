@@ -10,6 +10,8 @@ import com.sxtanna.mc.mb.data.BlockDropChange;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.util.LocationCodec;
 import io.papermc.paper.event.entity.EntityMoveEvent;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -25,6 +27,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDropItemEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -51,6 +54,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     public static @NotNull MobBorderPlugin get() {
         return Objects.requireNonNull(INSTANCE, "plugin not initialized");
     }
+
+
+    @NotNull
+    private static final LongSet IGNORED = new LongOpenHashSet();
 
 
     @NotNull
@@ -97,6 +104,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         killMobBorderEntity();
 
         INSTANCE = null;
+
+        IGNORED.clear();
     }
 
 
@@ -148,8 +157,19 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(@NotNull final BlockPlaceEvent event) {
+        if (getConfiguration().get(ChangeSettings.IGNORE_BLOCKS_PLACED)) {
+            IGNORED.add(event.getBlock().getBlockKey());
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(@NotNull final BlockDropItemEvent event) {
+        if (IGNORED.contains(event.getBlock().getBlockKey())) {
+            return;
+        }
+
         final var added = new ArrayList<ItemStack>();
 
         for (final var itemEntity : event.getItems()) {

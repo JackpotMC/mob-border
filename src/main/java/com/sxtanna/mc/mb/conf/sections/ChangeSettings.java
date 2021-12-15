@@ -11,11 +11,16 @@ import org.bukkit.Tag;
 
 import java.util.Map;
 
+import static ch.jalu.configme.properties.PropertyInitializer.newProperty;
+
 public final class ChangeSettings implements SettingsHolder {
+
+    public static final Property<Boolean> IGNORE_BLOCKS_PLACED =
+            newProperty("change.ignore-blocks-placed", true);
 
     public static final Property<Map<String, BlockDropChange>> CHANGES =
             PropertyInitializer.mapProperty(BeanPropertyType.of(BlockDropChange.class))
-                               .path("change")
+                               .path("change.changes")
 
                                .defaultEntry("iron_ore",
                                              BlockDropChange.set(Drop.of(Material.IRON_INGOT),
