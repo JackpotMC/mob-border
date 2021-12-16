@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -59,9 +60,24 @@ public final class RandomLocation {
                              CompletableFuture.supplyAsync(this::poll).whenComplete(($0, $1) -> this.previous.clear());
     }
 
+    public @NotNull Optional<Location> findNow() {
+        if (this.future != null && this.future.isDone()) {
+            try {
+                final var found = this.future.getNow(null);
+                if (found != null) {
+                    return Optional.of(found);
+                }
+            } catch (final Throwable ignored) {
+                // ignored
+            }
+        }
+
+        return Optional.ofNullable(pollSync(new AtomicLong(), new LongOpenHashSet(), MAX_ATTEMPTS / 2));
+    }
+
 
     private @Nullable Location poll() {
-        if (attempts.incrementAndGet() > MAX_ATTEMPTS) {
+        if (this.attempts.incrementAndGet() > MAX_ATTEMPTS) {
             return null;
         }
 
@@ -92,6 +108,31 @@ public final class RandomLocation {
         }
 
         return poll();
+    }
+
+    private @Nullable Location pollSync(@NotNull final AtomicLong attempts, @NotNull final LongSet previous, final long maxAttempts) {
+        if (attempts.incrementAndGet() > maxAttempts) {
+            return null;
+        }
+
+        final var random = generate(this.origin, this.radius);
+
+        if (previous.add(toChunkKey(random))) {
+
+            random.setY(random.getWorld().getHighestBlockYAt(random));
+
+            if (random.getWorld().getWorldBorder().isInside(random) &&
+                random.getBlock().getRelative(BlockFace.DOWN).getType().isSolid()) {
+
+                random.setX(random.getBlockX() + 0.5);
+                random.setY(random.getBlockY() + 1.1);
+                random.setZ(random.getBlockZ() + 0.5);
+
+                return random;
+            }
+        }
+
+        return pollSync(attempts, previous, maxAttempts);
     }
 
 
