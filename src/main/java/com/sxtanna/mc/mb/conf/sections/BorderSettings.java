@@ -28,7 +28,11 @@ public final class BorderSettings implements SettingsHolder {
     public static final Property<Boolean> BORDER_SCALING =
             newProperty("border.scaling", false);
 
+
     public static final Property<Boolean> TELEPORT_IN_ON_JOIN =
             newProperty("border.teleport-in-on-join", true);
+
+    public static final Property<Boolean> RANDOMIZED_RESPAWNS =
+            newProperty("border.randomized-respawns", true);
 
 }

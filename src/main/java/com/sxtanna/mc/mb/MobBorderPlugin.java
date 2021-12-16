@@ -270,6 +270,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onRespawning(@NotNull final PlayerRespawnEvent event) {
+        if (!getConfiguration().get(BorderSettings.RANDOMIZED_RESPAWNS)) {
+            return;
+        }
+
         final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
         if (entity == null) {
             return;
