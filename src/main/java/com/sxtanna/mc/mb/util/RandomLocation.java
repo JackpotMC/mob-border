@@ -94,7 +94,7 @@ public final class RandomLocation {
                            random.setY(random.getWorld().getHighestBlockYAt(random));
 
                            passes.complete(random.getWorld().getWorldBorder().isInside(random) &&
-                                           random.getBlock().getRelative(BlockFace.DOWN).getType().isSolid());
+                                           random.getBlock().getType().isSolid());
                        });
 
             if (passes.join()) {
@@ -122,7 +122,7 @@ public final class RandomLocation {
             random.setY(random.getWorld().getHighestBlockYAt(random));
 
             if (random.getWorld().getWorldBorder().isInside(random) &&
-                random.getBlock().getRelative(BlockFace.DOWN).getType().isSolid()) {
+                random.getBlock().getType().isSolid()) {
 
                 random.setX(random.getBlockX() + 0.5);
                 random.setY(random.getBlockY() + 1.1);
