@@ -33,6 +33,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -265,6 +266,21 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                               getServer().getScheduler().runTask(this, () -> event.getPlayer().teleportAsync(entity.getLocation()));
                           }
                       });
+    }
+
+    @EventHandler
+    public void onRespawning(@NotNull final PlayerRespawnEvent event) {
+        final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
+        if (entity == null) {
+            return;
+        }
+
+        final var border = event.getPlayer().getWorld().getWorldBorder();
+
+        RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
+                      .findNow()
+                      .ifPresentOrElse(event::setRespawnLocation,
+                                       () -> event.setRespawnLocation(entity.getLocation()));
     }
 
 
