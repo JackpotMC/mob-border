@@ -1,7 +1,6 @@
 package com.sxtanna.mc.mb;
 
 import co.aikar.commands.PaperCommandManager;
-import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import com.sxtanna.mc.mb.cmds.MobBorderCommand;
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
@@ -279,8 +278,12 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                       });
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onRespawning(@NotNull final PlayerRespawnEvent event) {
+        if (event.getRespawnFlags().contains(PlayerRespawnEvent.RespawnFlag.END_PORTAL)) {
+            return;
+        }
+
         if (!getConfiguration().get(BorderSettings.RANDOMIZED_RESPAWNS)) {
             return;
         }
