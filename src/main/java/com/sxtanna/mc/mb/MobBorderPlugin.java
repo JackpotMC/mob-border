@@ -279,7 +279,9 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        final var border = event.getPlayer().getWorld().getWorldBorder();
+        final var border = getConfiguration().get(BorderSettings.RESPAWN_WITH_ENTITY) ?
+                           entity.getWorld().getWorldBorder() :
+                           event.getPlayer().getWorld().getWorldBorder();
 
         RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
                       .findNow()

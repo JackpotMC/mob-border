@@ -35,4 +35,7 @@ public final class BorderSettings implements SettingsHolder {
     public static final Property<Boolean> RANDOMIZED_RESPAWNS =
             newProperty("border.randomized-respawns", true);
 
+    public static final Property<Boolean> RESPAWN_WITH_ENTITY =
+            newProperty("border.respawn-with-entity", true);
+
 }
