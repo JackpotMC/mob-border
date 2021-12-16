@@ -32,6 +32,7 @@ import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
+import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -302,14 +303,11 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onEntityDead(@NotNull final EntityRemoveFromWorldEvent event) {
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onEntityLead(@NotNull final PlayerLeashEntityEvent event) {
         final var entity = this.entity;
         if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
-            saveMobBorderValues();
-            killMobBorderEntity();
-
-            getServer().getScheduler().runTaskLater(this, this::loadMobBorderEntity, 20L);
+            event.setCancelled(true);
         }
     }
 
