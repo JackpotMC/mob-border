@@ -29,4 +29,7 @@ public final class EntitySettings implements SettingsHolder {
     public static final Property<Boolean> ENTITY_GLOWING =
             newProperty("entity.glowing", true);
 
+    public static final Property<Boolean> ENTITY_ALLOW_CREATIVE_LEASHING =
+            newProperty("entity.overrides.creative-leashing", true);
+
 }

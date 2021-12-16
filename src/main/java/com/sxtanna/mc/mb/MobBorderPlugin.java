@@ -313,6 +313,11 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     public void onEntityLead(@NotNull final PlayerLeashEntityEvent event) {
         final var entity = this.entity;
         if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
+
+            if (event.getPlayer().getGameMode() == GameMode.CREATIVE && getConfiguration().get(EntitySettings.ENTITY_ALLOW_CREATIVE_LEASHING)) {
+                return;
+            }
+
             event.setCancelled(true);
         }
     }
