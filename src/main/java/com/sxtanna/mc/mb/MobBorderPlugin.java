@@ -47,6 +47,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
@@ -301,8 +302,12 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
     public void killMobBorderEntity() {
+        final var origin = new AtomicReference<Location>();
+
         getEntity().flatMap(MobBorderEntity::live)
                    .ifPresent(entity -> {
+
+                       origin.set(entity.getLocation());
 
                        entity.getWorld().getWorldBorder().reset();
 
@@ -323,6 +328,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         this.entity = null;
 
         getConfiguration().setProperty(EntitySettings.ENTITY_UUID, "");
+
+        Optional.ofNullable(origin.get())
+                .ifPresent(location -> getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, LocationCodec.encode(location)));
+
         getConfiguration().save();
     }
 
