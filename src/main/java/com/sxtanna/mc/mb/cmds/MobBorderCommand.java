@@ -59,6 +59,7 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, "");
         this.plugin.getConfiguration().save();
 
+        this.plugin.saveMobBorderValues();
         this.plugin.killMobBorderEntity();
     }
 

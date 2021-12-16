@@ -1,6 +1,7 @@
 package com.sxtanna.mc.mb;
 
 import co.aikar.commands.PaperCommandManager;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import com.sxtanna.mc.mb.cmds.MobBorderCommand;
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
@@ -34,6 +35,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -48,7 +50,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
@@ -106,6 +107,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     public void onDisable() {
         HandlerList.unregisterAll(((Listener) this));
 
+        saveMobBorderValues();
         killMobBorderEntity();
 
         INSTANCE = null;
@@ -117,6 +119,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     public void reload() {
         getConfiguration().reload();
 
+        saveMobBorderValues();
+        killMobBorderEntity();
         loadMobBorderEntity();
 
         IGNORED.clear();
@@ -290,6 +294,26 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
 
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityRide(@NotNull final VehicleEnterEvent event) {
+        final var entity = this.entity;
+        if (entity != null && entity.uuid().equals(event.getEntered().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntityDead(@NotNull final EntityRemoveFromWorldEvent event) {
+        final var entity = this.entity;
+        if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
+            saveMobBorderValues();
+            killMobBorderEntity();
+
+            getServer().getScheduler().runTaskLater(this, this::loadMobBorderEntity, 20L);
+        }
+    }
+
+
     @Contract(pure = true)
     public @NotNull Config getConfiguration() {
         return this.configuration;
@@ -316,8 +340,6 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
     public void loadMobBorderEntity() {
-        killMobBorderEntity();
-
         final var origin = LocationCodec.decode(getConfiguration().get(BorderSettings.BORDER_ORIGIN))
                                         .orElse(null);
 
@@ -336,13 +358,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
     public void killMobBorderEntity() {
-        final var origin = new AtomicReference<Location>();
-
         getEntity().flatMap(MobBorderEntity::live)
                    .ifPresent(entity -> {
-
-                       origin.set(entity.getLocation());
-
                        entity.getWorld().getWorldBorder().reset();
 
                        Optional.of(entity.getWorld().getName() + "_nether")
@@ -356,17 +373,20 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                                .ifPresent(WorldBorder::reset);
 
                        entity.remove();
-
                    });
 
         this.entity = null;
 
         getConfiguration().setProperty(EntitySettings.ENTITY_UUID, "");
-
-        Optional.ofNullable(origin.get())
-                .ifPresent(location -> getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, LocationCodec.encode(location)));
-
         getConfiguration().save();
+    }
+
+    public void saveMobBorderValues() {
+        getEntity().flatMap(MobBorderEntity::live)
+                   .ifPresent(entity -> {
+                       getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, LocationCodec.encode(entity.getLocation()));
+                       getConfiguration().save();
+                   });
     }
 
 
