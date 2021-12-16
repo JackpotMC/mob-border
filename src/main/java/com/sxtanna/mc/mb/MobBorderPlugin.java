@@ -9,6 +9,7 @@ import com.sxtanna.mc.mb.conf.sections.EntitySettings;
 import com.sxtanna.mc.mb.data.BlockDropChange;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.util.LocationCodec;
+import com.sxtanna.mc.mb.util.RandomLocation;
 import io.papermc.paper.event.entity.EntityMoveEvent;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -30,6 +31,7 @@ import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -44,6 +46,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
@@ -214,6 +217,37 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         added.stream()
              .map(item -> event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item))
              .forEach(event.getItems()::add);
+    }
+
+
+    @EventHandler
+    public void onPlayerJoin(@NotNull final PlayerJoinEvent event) {
+        final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
+        if (entity == null) {
+            return;
+        }
+
+        final var border = event.getPlayer().getWorld().getWorldBorder();
+        if (border.isInside(event.getPlayer().getLocation())) {
+            return;
+        }
+
+        final var prev = event.getPlayer().isInvulnerable();
+
+        event.getPlayer().setInvulnerable(true);
+
+        RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
+                      .find()
+                      .orTimeout(10L, TimeUnit.SECONDS)
+                      .whenComplete((location, throwable) -> {
+                          event.getPlayer().setInvulnerable(prev);
+
+                          if (location != null) {
+                              getServer().getScheduler().runTask(this, () -> event.getPlayer().teleportAsync(location));
+                          } else {
+                              getServer().getScheduler().runTask(this, () -> event.getPlayer().teleportAsync(entity.getLocation()));
+                          }
+                      });
     }
 
 
