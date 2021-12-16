@@ -35,6 +35,7 @@ import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
@@ -277,6 +278,24 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                           }
                       });
     }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerQuit(@NotNull final PlayerQuitEvent event) {
+        final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
+        if (entity == null) {
+            return;
+        }
+
+        final var riding = event.getPlayer().getVehicle();
+        if (riding == null || !riding.getUniqueId().equals(entity.getUniqueId())) {
+            return;
+        }
+
+        entity.eject();
+
+        event.getPlayer().leaveVehicle(); // just to make sure
+    }
+
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onRespawning(@NotNull final PlayerRespawnEvent event) {
