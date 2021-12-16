@@ -131,4 +131,13 @@ public final class MobBorderCommand extends BaseCommand {
                    .ifPresent(this.plugin::updateEntityValues);
     }
 
+
+    @Subcommand("reload")
+    @CommandPermission("jmc.mobborder.reload")
+    public void reload(@NotNull final CommandSender sender) {
+        this.plugin.getConfiguration().reload();
+
+        this.plugin.loadMobBorderEntity();
+    }
+
 }
