@@ -113,6 +113,18 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
 
+    public void reload() {
+        getConfiguration().reload();
+
+        loadMobBorderEntity();
+
+        IGNORED.clear();
+
+        this.changes.clear();
+        this.changes.addAll(getConfiguration().get(ChangeSettings.CHANGES).values());
+    }
+
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityMove(@NotNull final EntityMoveEvent event) {
         final var entity = this.entity;

@@ -135,9 +135,7 @@ public final class MobBorderCommand extends BaseCommand {
     @Subcommand("reload")
     @CommandPermission("jmc.mobborder.reload")
     public void reload(@NotNull final CommandSender sender) {
-        this.plugin.getConfiguration().reload();
-
-        this.plugin.loadMobBorderEntity();
+        this.plugin.reload();
     }
 
 }
