@@ -47,6 +47,8 @@ public final class BlockDropChange {
     private @NotNull List<Drop> match;
     private @NotNull Drop       drops;
 
+    public BlockDropChange() {}
+
     public BlockDropChange(@NotNull Mode mode,
 
                            double chance,
@@ -143,6 +145,9 @@ public final class BlockDropChange {
 
         private @NotNull Material type;
         private          int      amount;
+
+
+        public Drop() {}
 
         public Drop(@NotNull Material type, int amount) {
             this.type   = type;
