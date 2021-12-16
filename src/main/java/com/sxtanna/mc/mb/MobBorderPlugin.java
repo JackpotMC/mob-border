@@ -222,6 +222,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerJoin(@NotNull final PlayerJoinEvent event) {
+        if (!getConfiguration().get(BorderSettings.TELEPORT_IN_ON_JOIN)) {
+            return;
+        }
+
         final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
         if (entity == null) {
             return;
