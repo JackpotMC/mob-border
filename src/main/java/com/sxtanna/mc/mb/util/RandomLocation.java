@@ -95,7 +95,7 @@ public final class RandomLocation {
     }
 
 
-    private static long toChunkKey(@NotNull Location location) {
+    private static long toChunkKey(@NotNull final Location location) {
         final var x = (long) location.getBlockX() << 4;
         final var z = (long) location.getBlockZ() << 4;
 

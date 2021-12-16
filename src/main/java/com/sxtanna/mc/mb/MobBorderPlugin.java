@@ -400,8 +400,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
 
 
-        final var size = getConfiguration().get(BorderSettings.BORDER_SIZE);
-        final var hurt = getConfiguration().get(BorderSettings.BORDER_HURT);
+        final var size     = getConfiguration().get(BorderSettings.BORDER_SIZE);
+        final var hurt     = getConfiguration().get(BorderSettings.BORDER_HURT);
         final var distHurt = getConfiguration().get(BorderSettings.BORDER_DIST_HURT);
         final var distWarn = getConfiguration().get(BorderSettings.BORDER_DIST_WARN);
 

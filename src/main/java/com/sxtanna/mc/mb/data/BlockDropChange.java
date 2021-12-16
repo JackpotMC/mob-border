@@ -42,19 +42,18 @@ public final class BlockDropChange {
     }
 
 
-    private @NotNull Mode       mode;
-    private          double     chance;
-    private @NotNull List<Drop> match;
-    private @NotNull Drop       drops;
+    private Mode       mode;
+    private double     chance;
+    private List<Drop> match;
+    private Drop       drops;
 
-    public BlockDropChange() {}
 
-    public BlockDropChange(@NotNull Mode mode,
+    @Contract(pure = true)
+    public BlockDropChange() {
+    }
 
-                           double chance,
-
-                           @NotNull List<Drop> match,
-                           @NotNull Drop drops) {
+    @Contract(pure = true)
+    public BlockDropChange(@NotNull final Mode mode, final double chance, @NotNull final List<Drop> match, @NotNull final Drop drops) {
         this.mode   = mode;
         this.chance = chance;
         this.match  = match;
@@ -66,62 +65,72 @@ public final class BlockDropChange {
         return this.getMatch().stream().anyMatch(drop -> drop.applicable(item));
     }
 
+
+    @Contract(pure = true)
     public Mode getMode() {
-        return mode;
+        return this.mode;
     }
 
-    public void setMode(Mode mode) {
+    @Contract(mutates = "this")
+    public void setMode(@NotNull final Mode mode) {
         this.mode = mode;
     }
 
+    @Contract(pure = true)
     public double getChance() {
-        return chance;
+        return this.chance;
     }
 
-    public void setChance(double chance) {
+    @Contract(mutates = "this")
+    public void setChance(final double chance) {
         this.chance = chance;
     }
 
+    @Contract(pure = true)
     public List<Drop> getMatch() {
-        return match;
+        return this.match;
     }
 
-    public void setMatch(List<Drop> match) {
+    @Contract(mutates = "this")
+    public void setMatch(@NotNull final List<Drop> match) {
         this.match = match;
     }
 
+    @Contract(pure = true)
     public Drop getDrops() {
-        return drops;
+        return this.drops;
     }
 
-    public void setDrops(Drop drops) {
+    @Contract(mutates = "this")
+    public void setDrops(@NotNull final Drop drops) {
         this.drops = drops;
     }
 
 
+    @Contract(value = "null -> false", pure = true)
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (BlockDropChange) obj;
-        return Objects.equals(this.mode, that.mode) &&
-               Double.doubleToLongBits(this.chance) == Double.doubleToLongBits(that.chance) &&
-               Objects.equals(this.match, that.match) &&
-               Objects.equals(this.drops, that.drops);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BlockDropChange that)) return false;
+
+        return Double.compare(that.getChance(), getChance()) == 0 &&
+               getMode() == that.getMode() &&
+               Objects.equals(getMatch(), that.getMatch()) &&
+               Objects.equals(getDrops(), that.getDrops());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mode, chance, match, drops);
+        return Objects.hash(getMode(), getChance(), getMatch(), getDrops());
     }
 
+
     @Override
-    public String toString() {
-        return "BlockDropChange[" +
-               "mode=" + mode + ", " +
-               "chance=" + chance + ", " +
-               "match=" + match + ", " +
-               "drops=" + drops + ']';
+    public @NotNull String toString() {
+        return "BlockDropChange[mode=%s, chance=%s, match=%s, drops=%s]".formatted(getMode(),
+                                                                                   getChance(),
+                                                                                   getMatch(),
+                                                                                   getDrops());
     }
 
 
@@ -129,6 +138,7 @@ public final class BlockDropChange {
         ADD,
         SET,
     }
+
 
     public static final class Drop {
 
@@ -142,32 +152,38 @@ public final class BlockDropChange {
             return new Drop(type, amount);
         }
 
+        private Material type;
+        private int      amount;
 
-        private @NotNull Material type;
-        private          int      amount;
 
+        @Contract(pure = true)
+        public Drop() {
+        }
 
-        public Drop() {}
-
-        public Drop(@NotNull Material type, int amount) {
+        @Contract(pure = true)
+        public Drop(@NotNull final Material type, int amount) {
             this.type   = type;
             this.amount = amount;
         }
 
 
+        @Contract(pure = true)
         public Material getType() {
-            return type;
+            return this.type;
         }
 
-        public void setType(Material type) {
+        @Contract(mutates = "this")
+        public void setType(@NotNull final Material type) {
             this.type = type;
         }
 
+        @Contract(pure = true)
         public int getAmount() {
-            return amount;
+            return this.amount;
         }
 
-        public void setAmount(int amount) {
+        @Contract(mutates = "this")
+        public void setAmount(final int amount) {
             this.amount = amount;
         }
 
@@ -182,25 +198,26 @@ public final class BlockDropChange {
         }
 
 
+        @Contract(value = "null -> false", pure = true)
         @Override
-        public boolean equals(Object obj) {
-            if (obj == this) return true;
-            if (obj == null || obj.getClass() != this.getClass()) return false;
-            var that = (Drop) obj;
-            return Objects.equals(this.type, that.type) &&
-                   this.amount == that.amount;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Drop drop)) return false;
+
+            return getAmount() == drop.getAmount() &&
+                   getType() == drop.getType();
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(type, amount);
+            return Objects.hash(getType(), getAmount());
         }
+
 
         @Override
         public String toString() {
-            return "Drop[" +
-                   "type=" + type + ", " +
-                   "amount=" + amount + ']';
+            return "Drop[type=%s, amount=%d]".formatted(getType(),
+                                                        getAmount());
         }
 
     }

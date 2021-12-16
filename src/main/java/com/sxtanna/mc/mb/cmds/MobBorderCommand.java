@@ -15,7 +15,6 @@ import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.util.LocationCodec;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
