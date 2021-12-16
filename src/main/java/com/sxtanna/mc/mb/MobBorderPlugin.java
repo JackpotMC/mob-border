@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -182,6 +183,11 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(@NotNull final BlockPlaceEvent event) {
         if (getConfiguration().get(ChangeSettings.IGNORE_BLOCKS_PLACED)) {
+
+            if (event.getPlayer().getGameMode() == GameMode.CREATIVE && getConfiguration().get(ChangeSettings.ALLOW_CREATIVE_PLACED_BLOCKS)) {
+                return;
+            }
+
             IGNORED.add(event.getBlock().getBlockKey());
         }
     }

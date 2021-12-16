@@ -18,6 +18,9 @@ public final class ChangeSettings implements SettingsHolder {
     public static final Property<Boolean> IGNORE_BLOCKS_PLACED =
             newProperty("change.ignore-blocks-placed", true);
 
+    public static final Property<Boolean> ALLOW_CREATIVE_PLACED_BLOCKS =
+            newProperty("change.allow-creative-placed", true);
+
     public static final Property<Map<String, BlockDropChange>> CHANGES =
             PropertyInitializer.mapProperty(BeanPropertyType.of(BlockDropChange.class))
                                .path("change.changes")
