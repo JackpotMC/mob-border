@@ -401,18 +401,21 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
 
         final var size = getConfiguration().get(BorderSettings.BORDER_SIZE);
-        final var hurt = getConfiguration().get(BorderSettings.BORDER_DIST_HURT);
-        final var warn = getConfiguration().get(BorderSettings.BORDER_DIST_WARN);
+        final var hurt = getConfiguration().get(BorderSettings.BORDER_HURT);
+        final var distHurt = getConfiguration().get(BorderSettings.BORDER_DIST_HURT);
+        final var distWarn = getConfiguration().get(BorderSettings.BORDER_DIST_WARN);
 
         overworld.setSize(size);
-        overworld.setDamageBuffer(hurt);
-        overworld.setWarningDistance(warn);
+        overworld.setDamageAmount(hurt);
+        overworld.setDamageBuffer(distHurt);
+        overworld.setWarningDistance(distWarn);
 
 
         if (theend != null) { // I'm... not sure if there is a scale on this.. ?
             theend.setSize(size);
-            theend.setDamageBuffer(hurt);
-            theend.setWarningDistance(warn);
+            theend.setDamageAmount(hurt);
+            theend.setDamageBuffer(distHurt);
+            theend.setWarningDistance(distWarn);
         }
 
         if (nether != null) {
@@ -421,8 +424,9 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
                                    size / 8;
 
             nether.setSize(scaledSize);
-            nether.setDamageBuffer(hurt);
-            nether.setWarningDistance(warn);
+            nether.setDamageAmount(hurt);
+            nether.setDamageBuffer(distHurt);
+            nether.setWarningDistance(distWarn);
         }
     }
 

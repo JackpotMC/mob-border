@@ -11,6 +11,10 @@ public final class BorderSettings implements SettingsHolder {
             newProperty("border.size", 250.0);
 
 
+    public static final Property<Double> BORDER_HURT =
+            newProperty("border.hurt", 0.2);
+
+
     public static final Property<Integer> BORDER_DIST_WARN =
             newProperty("border.dist.warn", 5);
 

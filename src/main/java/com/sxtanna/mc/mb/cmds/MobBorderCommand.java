@@ -75,6 +75,17 @@ public final class MobBorderCommand extends BaseCommand {
                    .ifPresent(this.plugin::updateWorldBorders);
     }
 
+    @Subcommand("damage")
+    @CommandPermission("jmc.mobborder.damage")
+    public void damage(@NotNull final CommandSender sender, @Default("0.2") @Flags("min=0.0,max=20.0") final double damage) {
+        this.plugin.getConfiguration().setProperty(BorderSettings.BORDER_HURT, damage);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateWorldBorders);
+    }
+
     @Subcommand("scaling")
     @CommandPermission("jmc.mobborder.scaling")
     public void scaling(@NotNull final CommandSender sender, @Default("false") final boolean scaling) {
