@@ -263,22 +263,17 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        final var prev = event.getPlayer().isInvulnerable();
-
         event.getPlayer().setInvulnerable(true);
 
         RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
                       .find()
                       .orTimeout(10L, TimeUnit.SECONDS)
-                      .whenComplete((location, throwable) -> {
-                          event.getPlayer().setInvulnerable(prev);
+                      .whenComplete((location, throwable) -> getServer().getScheduler().runTask(this, () ->
+                      {
+                          event.getPlayer().setInvulnerable(false);
 
-                          if (location != null) {
-                              getServer().getScheduler().runTask(this, () -> event.getPlayer().teleportAsync(location));
-                          } else {
-                              getServer().getScheduler().runTask(this, () -> event.getPlayer().teleportAsync(entity.getLocation()));
-                          }
-                      });
+                          event.getPlayer().teleportAsync(location != null ? location : entity.getLocation());
+                      }));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
