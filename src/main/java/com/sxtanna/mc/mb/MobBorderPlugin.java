@@ -39,6 +39,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Contract;
@@ -389,22 +390,32 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
     public void killMobBorderEntity() {
-        getEntity().flatMap(MobBorderEntity::live)
-                   .ifPresent(entity -> {
-                       entity.getWorld().getWorldBorder().reset();
+        killMobBorderEntity(false);
+    }
 
-                       Optional.of(entity.getWorld().getName() + "_nether")
-                               .map(Bukkit::getWorld)
-                               .map(World::getWorldBorder)
-                               .ifPresent(WorldBorder::reset);
+    public void killMobBorderEntity(final boolean allowRespawning) {
+        final var entity = getEntity().flatMap(MobBorderEntity::live)
+                                      .orElse(null);
 
-                       Optional.of(entity.getWorld().getName() + "_the_end")
-                               .map(Bukkit::getWorld)
-                               .map(World::getWorldBorder)
-                               .ifPresent(WorldBorder::reset);
+        if (entity != null) {
+            if (!allowRespawning) {
+                entity.setMetadata("removing", new FixedMetadataValue(this, 1));
+            }
 
-                       entity.remove();
-                   });
+            entity.getWorld().getWorldBorder().reset();
+
+            Optional.of(entity.getWorld().getName() + "_nether")
+                    .map(Bukkit::getWorld)
+                    .map(World::getWorldBorder)
+                    .ifPresent(WorldBorder::reset);
+
+            Optional.of(entity.getWorld().getName() + "_the_end")
+                    .map(Bukkit::getWorld)
+                    .map(World::getWorldBorder)
+                    .ifPresent(WorldBorder::reset);
+
+            entity.remove();
+        }
 
         this.entity = null;
 
@@ -413,11 +424,19 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     }
 
     public void saveMobBorderValues() {
-        getEntity().flatMap(MobBorderEntity::live)
-                   .ifPresent(entity -> {
-                       getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, LocationCodec.encode(entity.getLocation()));
-                       getConfiguration().save();
-                   });
+        saveMobBorderValues(null);
+    }
+
+    public void saveMobBorderValues(@Nullable final Entity override) {
+        final var entity = Optional.ofNullable(override)
+                                   .or(() -> getEntity().flatMap(MobBorderEntity::live))
+                                   .orElse(null);
+        if (entity == null) {
+            return;
+        }
+
+        getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, LocationCodec.encode(entity.getLocation()));
+        getConfiguration().save();
     }
 
 
