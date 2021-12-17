@@ -1,6 +1,7 @@
 package com.sxtanna.mc.mb;
 
 import co.aikar.commands.PaperCommandManager;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import com.sxtanna.mc.mb.cmds.MobBorderCommand;
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
@@ -342,6 +343,26 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
             }
 
             event.setCancelled(true);
+        }
+    }
+
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntityDead(@NotNull final EntityRemoveFromWorldEvent event) {
+        if (!getConfiguration().get(EntitySettings.ENTITY_RESPAWNS)) {
+            return;
+        }
+
+        final var entity = this.entity;
+        if (entity != null && entity.uuid().equals(event.getEntity().getUniqueId())) {
+
+            if (event.getEntity().hasMetadata("removing")) {
+                return;
+            }
+
+            saveMobBorderValues(event.getEntity());
+
+            getServer().getScheduler().runTaskLater(this, this::loadMobBorderEntity, 20L);
         }
     }
 
