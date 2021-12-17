@@ -482,6 +482,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         entity.setGlowing(getConfiguration().get(EntitySettings.ENTITY_GLOWING));
 
         if (entity instanceof LivingEntity living) {
+            living.setRemoveWhenFarAway(false);
+
             final var speed = living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
             if (speed != null) {
                 speed.setBaseValue(getConfiguration().get(EntitySettings.ENTITY_SPEED));
