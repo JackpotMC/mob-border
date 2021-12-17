@@ -144,6 +144,14 @@ public final class MobBorderCommand extends BaseCommand {
     }
 
 
+    @Subcommand("entity respawns")
+    @CommandPermission("jmc.mobborder.entity.respawns")
+    public void respawns(@NotNull final CommandSender sender, @Default("false") final boolean respawns) {
+        this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_RESPAWNS, respawns);
+        this.plugin.getConfiguration().save();
+    }
+
+
     @Subcommand("reload")
     @CommandPermission("jmc.mobborder.reload")
     public void reload(@NotNull final CommandSender sender) {
