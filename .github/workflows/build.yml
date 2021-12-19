@@ -1,0 +1,34 @@
+name: Build Plugin
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Initialize JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Ensure Gradlew is Executable
+        run: chmod +x ./gradlew
+
+      - name: Build Gradle Project
+        run: ./gradlew build
+
+      - name: Cleanup Gradle Cache
+        run: |
+          rm -f ~/.gradle/caches/modules-2/modules-2.lock
+          rm -f ~/.gradle/caches/modules-2/gc.properties
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: latest-build
+          path: build/libs/*.jar
