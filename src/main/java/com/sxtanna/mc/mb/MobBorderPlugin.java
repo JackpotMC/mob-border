@@ -43,6 +43,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,6 +55,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
@@ -81,6 +83,9 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     private       MobBorderEntity       entity;
     @NotNull
     private final List<BlockDropChange> changes = new ArrayList<>();
+
+    @NotNull
+    private final AtomicReference<BukkitTask> randomSpeedTask = new AtomicReference<>();
 
 
     @Override
@@ -486,15 +491,59 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         entity.setGlowing(getConfiguration().get(EntitySettings.ENTITY_GLOWING));
 
-        if (entity instanceof LivingEntity living) {
+        final BukkitTask prev;
+
+        if (!(entity instanceof LivingEntity living)) {
+            prev = this.randomSpeedTask.getAndSet(null);
+        } else {
             living.setRemoveWhenFarAway(false);
 
-            living.setAI(!getConfiguration().get(EntitySettings.ENTITY_FROZEN));
+            final var frozen = getConfiguration().get(EntitySettings.ENTITY_FROZEN);
+            living.setAI(!frozen);
 
-            final var speed = living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
-            if (speed != null) {
-                speed.setBaseValue(getConfiguration().get(EntitySettings.ENTITY_SPEED));
+            if (frozen) {
+                prev = this.randomSpeedTask.getAndSet(null);
+            } else {
+                final var speedAttribute = living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+                if (speedAttribute == null) {
+                    prev = this.randomSpeedTask.getAndSet(null);
+                } else {
+                    final var speed = getConfiguration().get(EntitySettings.ENTITY_SPEED);
+                    speedAttribute.setBaseValue(speed);
+
+                    if (!getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_ENABLED)) {
+                        prev = this.randomSpeedTask.getAndSet(null);
+                    } else {
+                        final var intervalTime = getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_INTERVAL_TIME);
+                        final var intervalUnit = getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_INTERVAL_UNIT);
+
+                        final var intervalTicks = TimeUnit.MILLISECONDS.convert(intervalTime, intervalUnit) / (1000L / 20L);
+
+                        prev = this.randomSpeedTask.getAndSet(getServer().getScheduler().runTaskTimer(this, () ->
+                        {
+                            final var min = getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_MIN);
+                            final var max = getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_MAX);
+
+                            final var randomSpeed = ThreadLocalRandom.current().nextDouble(min, max);
+                            speedAttribute.setBaseValue(randomSpeed);
+
+
+                            final var sustainsTime = getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_SUSTAINS_TIME);
+                            final var sustainsUnit = getConfiguration().get(EntitySettings.ENTITY_RANDOM_SPEED_SUSTAINS_UNIT);
+
+                            final var sustainsTicks = TimeUnit.MILLISECONDS.convert(sustainsTime, sustainsUnit) / (1000L / 20L);
+
+                            if (sustainsTicks < intervalTicks) {
+                                getServer().getScheduler().runTaskLater(this, () -> speedAttribute.setBaseValue(speed), sustainsTicks);
+                            }
+                        }, intervalTicks, intervalTicks));
+                    }
+                }
             }
+        }
+
+        if (prev != null) {
+            prev.cancel();
         }
     }
 
