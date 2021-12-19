@@ -54,6 +54,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
@@ -105,6 +106,15 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         manager.usePerIssuerLocale(true, true);
 
         manager.registerCommand(new MobBorderCommand(this));
+
+
+        try {
+            if (getServer().getPluginManager().isPluginEnabled("PinataParty")) {
+                getServer().getPluginManager().registerEvents(new com.sxtanna.mc.mb.hook.PParty(this), this);
+            }
+        } catch (final Throwable ex) {
+            getLogger().log(Level.SEVERE, "failed to initialize PinataParty hook", ex);
+        }
     }
 
     @Override
