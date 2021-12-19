@@ -29,6 +29,9 @@ public final class EntitySettings implements SettingsHolder {
     public static final Property<Boolean> ENTITY_GLOWING =
             newProperty("entity.glowing", true);
 
+    public static final Property<Boolean> ENTITY_FROZEN =
+            newProperty("entity.frozen", false);
+
     public static final Property<Boolean> ENTITY_RESPAWNS =
             newProperty("entity.automatically-respawns", false);
 

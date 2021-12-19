@@ -143,6 +143,17 @@ public final class MobBorderCommand extends BaseCommand {
                    .ifPresent(this.plugin::updateEntityValues);
     }
 
+    @Subcommand("entity freeze")
+    @CommandPermission("jmc.mobborder.entity.freeze")
+    public void freeze(@NotNull final CommandSender sender, @Default("false") final boolean frozen) {
+        this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_FROZEN, frozen);
+        this.plugin.getConfiguration().save();
+
+        this.plugin.getEntity()
+                   .flatMap(MobBorderEntity::live)
+                   .ifPresent(this.plugin::updateEntityValues);
+    }
+
 
     @Subcommand("entity respawns")
     @CommandPermission("jmc.mobborder.entity.respawns")
