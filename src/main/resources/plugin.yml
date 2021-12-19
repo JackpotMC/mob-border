@@ -6,3 +6,6 @@ authors: ["Sxtanna"]
 
 api-version: "1.18"
 description: "Mob Tracking World Border"
+
+softdepend:
+  - "PinataParty"
