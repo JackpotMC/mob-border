@@ -37,9 +37,15 @@ test {
     useJUnitPlatform()
 }
 
+
 build {
     dependsOn shadowJar
 }
+
+shadowJar {
+    archiveClassifier.set("")
+}
+
 
 processResources {
     filesMatching("*.yml") {
