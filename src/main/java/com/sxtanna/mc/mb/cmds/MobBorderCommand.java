@@ -105,7 +105,7 @@ public final class MobBorderCommand extends BaseCommand {
 
     @Subcommand("entity rename")
     @CommandPermission("jmc.mobborder.entity.rename")
-    public void silent(@NotNull final CommandSender sender, @NotNull final String name) {
+    public void rename(@NotNull final CommandSender sender, @NotNull final String name) {
         this.plugin.getConfiguration().setProperty(EntitySettings.ENTITY_NAME, name);
         this.plugin.getConfiguration().save();
 
