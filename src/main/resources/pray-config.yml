@@ -1,0 +1,101 @@
+database:
+  #do not touch unless you know what you're doing!
+  conn-string: "mongodb://admin:Sg9qMu6g5k4A6k4B@10.0.0.1:27017/?uuidRepresentation=STANDARD"
+  db-name: "BorderSMP"
+
+combat:
+  #in seconds
+  tag-duration: 15
+  message: "&cYou have been combat tagged for %duration% seconds!"
+  #if tagged when typing /spawn, this message will be sent
+  still-tagged: "&cYou cannot teleport to spawn becuase you're still combat tagged!"
+
+stats:
+  message:
+    - "&7Hello &a%player%&7, stats are:"
+    - "Kills: %kills%"
+    - "Deaths: %deaths%"
+    - "KD: %kd%"
+    - "Ores Mined: %ores_mined%"
+    - "Playtime: %d% day(s), %h% hour(s), %m% minute(s), %s% second(s)"
+
+backpack:
+  messages:
+    give: "&aYou have been given a backpack!"
+    remove: "&cYou have removed your back, you can get another one with /backpack give."
+  error-messages:
+    already-have-backpack: "&cYou already have a backpack"
+    dont-have-backpack: "&cYou don't have a backpack"
+  drop:
+    #true = delets backpack on drop, false = does not let you drop and sends disabled-message
+    disabled-message: "&cYou cannot drop your backpack! Remove it from your inventory with /backpack remove"
+    enabled: true
+    deleted-message: "&cYou have dropped your backpack, you can get another one with /backpack give."
+  item:
+    material: "BARREL"
+    amount: 1
+    name: "&aBackpack"
+    lore:
+      - "&a"
+      - "&cThis is a lore line"
+
+lobby:
+  drop-below-y: 40
+  #When creating the lobby world, keep in mind it MUST be named "lobby" all lowercase. Setting the spawn below the drop point could cause some (untested) issues
+  spawn:
+    #delay in seconds for the /spawn command
+    delay: 5
+    teleporting-in: "&7You are teleporting to spawn in &c%remaining% &7seconds!"
+    cancelled: "&cYour teleportation to spawn has been cancelled because you moved!"
+    success: "&aYou have successfully been teleported to spawn!"
+    x: 0.0
+    y: 90.5
+    z: 0.0
+
+events:
+  #tick based, each second is 20 ticks so 20 ticks * 3600 seconds = 72000 ticks
+  first-event-delay: 72000
+  event-delay: 72000
+  creepers:
+    #amount of creepers that spawn near the player
+    amount-per-player: 3
+  airdrops:
+    #amount of airdrops that spawn per player
+    amount-per-player: 3
+    #Amount of random put in the chest (max of 27)
+    rewards-amount: 3
+    #format is [Material Amount Chance] (no commas, amount can only be a max of 64, whole numbers only)
+    possible-items:
+      - "DIAMOND 1 25"
+      - "DIAMOND_SWORD 1 10"
+      - "IRON_CHESTPLATE 1 10"
+  luckyblocks:
+    material: "SPONGE"
+    #amount of luckyblocks that spawn per player
+    amount-per-player: 3
+    #Amount of random items given when opening
+    rewards-amount: 3
+    #format is [Material Amount Chance] (no commas, amount can only be a max of 64, whole numbers only)
+    possible-items:
+      - "DIAMOND 1 25"
+      - "DIAMOND_SWORD 1 10"
+      - "IRON_CHESTPLATE 1 10"
+  acid-rain:
+    #in seconds
+    duration: 90
+    damage-amount: 0.5
+    ended-message:
+      enabled: true
+      msg: "&aAcid Rain &7has ended!"
+  loot-rain:
+    #amount of rewards spawned near each player
+    amount-per-player: 3
+    #format is [Material Amount Chance] (no commas, amount can only be a max of 64, whole numbers only)
+    possible-items:
+      - "DIAMOND 1 25"
+      - "DIAMOND_SWORD 1 10"
+      - "IRON_CHESTPLATE 1 10"
+  end-portal:
+    #in seconds
+    duration: 90
+

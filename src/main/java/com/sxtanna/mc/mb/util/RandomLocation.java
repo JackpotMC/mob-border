@@ -4,7 +4,6 @@ import com.sxtanna.mc.mb.MobBorderPlugin;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.bukkit.Location;
-import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,14 +28,14 @@ public final class RandomLocation {
     @NotNull
     private final MobBorderPlugin plugin;
 
-    private final int      radius;
+    private final int radius;
     @NotNull
     private final Location origin;
 
     @NotNull
     private final AtomicLong attempts = new AtomicLong();
     @NotNull
-    private final LongSet    previous = new LongOpenHashSet();
+    private final LongSet previous = new LongOpenHashSet();
 
     @Nullable
     private CompletableFuture<Location> future;
@@ -56,8 +55,8 @@ public final class RandomLocation {
         }
 
         return this.future = this.radius <= 0 ?
-                             CompletableFuture.completedFuture(this.origin) :
-                             CompletableFuture.supplyAsync(this::poll).whenComplete(($0, $1) -> this.previous.clear());
+                CompletableFuture.completedFuture(this.origin) :
+                CompletableFuture.supplyAsync(this::poll).whenComplete(($0, $1) -> this.previous.clear());
     }
 
     public @NotNull Optional<Location> findNow() {
@@ -88,14 +87,14 @@ public final class RandomLocation {
             final var passes = new CompletableFuture<Boolean>();
 
             this.plugin.getServer()
-                       .getScheduler()
-                       .runTask(this.plugin, () ->
-                       {
-                           random.setY(random.getWorld().getHighestBlockYAt(random));
+                    .getScheduler()
+                    .runTask(this.plugin, () ->
+                    {
+                        random.setY(random.getWorld().getHighestBlockYAt(random));
 
-                           passes.complete(random.getWorld().getWorldBorder().isInside(random) &&
-                                           random.getBlock().getType().isSolid());
-                       });
+                        passes.complete(random.getWorld().getWorldBorder().isInside(random) &&
+                                random.getBlock().getType().isSolid());
+                    });
 
             if (passes.join()) {
 
@@ -122,7 +121,7 @@ public final class RandomLocation {
             random.setY(random.getWorld().getHighestBlockYAt(random));
 
             if (random.getWorld().getWorldBorder().isInside(random) &&
-                random.getBlock().getType().isSolid()) {
+                    random.getBlock().getType().isSolid()) {
 
                 random.setX(random.getBlockX() + 0.5);
                 random.setY(random.getBlockY() + 1.1);
@@ -148,9 +147,9 @@ public final class RandomLocation {
         final var r = (radius - 1.0) * sqrt(Math.random());
 
         return new Location(origin.getWorld(),
-                            origin.getX() + r * Math.cos(t),
-                            0.0,
-                            origin.getZ() + r * Math.sin(t));
+                origin.getX() + r * Math.cos(t),
+                0.0,
+                origin.getZ() + r * Math.sin(t));
     }
 
 }

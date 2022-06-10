@@ -2,29 +2,48 @@ package com.sxtanna.mc.mb;
 
 import co.aikar.commands.PaperCommandManager;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.sxtanna.mc.mb.cmds.Backpack;
 import com.sxtanna.mc.mb.cmds.MobBorderCommand;
+import com.sxtanna.mc.mb.cmds.PrayConfigReload;
+import com.sxtanna.mc.mb.cmds.SpawnCommand;
+import com.sxtanna.mc.mb.cmds.pray.donator.AnvilCommand;
+import com.sxtanna.mc.mb.cmds.pray.donator.EnchantingTableCommand;
+import com.sxtanna.mc.mb.cmds.pray.donator.SmithingTableCommand;
+import com.sxtanna.mc.mb.cmds.stats.Stats;
+import com.sxtanna.mc.mb.combat.CombatTagEvent;
 import com.sxtanna.mc.mb.conf.Config;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
 import com.sxtanna.mc.mb.conf.sections.ChangeSettings;
 import com.sxtanna.mc.mb.conf.sections.EntitySettings;
 import com.sxtanna.mc.mb.data.BlockDropChange;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
+import com.sxtanna.mc.mb.events.AutoSmelt;
+import com.sxtanna.mc.mb.events.BackpackEvents;
+import com.sxtanna.mc.mb.events.LobbyEvents;
+import com.sxtanna.mc.mb.events.stats.StatsEvents;
+import com.sxtanna.mc.mb.revents.EventManager;
+import com.sxtanna.mc.mb.revents.events.LuckyBlock;
+import com.sxtanna.mc.mb.util.FileHandler;
 import com.sxtanna.mc.mb.util.LocationCodec;
 import com.sxtanna.mc.mb.util.RandomLocation;
+import com.sxtanna.mc.mb.util.SpigotExpansion;
 import io.papermc.paper.event.entity.EntityMoveEvent;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.World;
-import org.bukkit.WorldBorder;
+import org.bson.Document;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
@@ -40,19 +59,20 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -61,7 +81,7 @@ import java.util.logging.Level;
 public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @Nullable
-    private static MobBorderPlugin INSTANCE;
+    public static MobBorderPlugin INSTANCE;
 
     @Contract(pure = true)
     public static @NotNull MobBorderPlugin get() {
@@ -72,21 +92,40 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
     @NotNull
     private static final LongSet IGNORED = new LongOpenHashSet();
 
-
     @NotNull
-    private final NamespacedKey namespace     = new NamespacedKey(this, "border-entity");
+    private final NamespacedKey namespace = new NamespacedKey(this, "border-entity");
     @NotNull
-    private final Config        configuration = new Config(getDataFolder().toPath().resolve("config.yml"));
+    private final Config configuration = new Config(getDataFolder().toPath().resolve("config.yml"));
 
 
     @Nullable
-    private       MobBorderEntity       entity;
+    private MobBorderEntity entity;
     @NotNull
     private final List<BlockDropChange> changes = new ArrayList<>();
 
     @NotNull
     private final AtomicReference<BukkitTask> randomSpeedTask = new AtomicReference<>();
 
+    @NotNull
+    public ConcurrentHashMap<UUID, Long> combatLog = new ConcurrentHashMap<>();
+
+    public FileHandler config;
+
+    public MongoClient mongoClient;
+
+    public MongoDatabase db;
+
+    public MongoCollection<Document> getPlayerCollection() {
+        return playerCollection;
+    }
+
+    public MongoCollection<Document> playerCollection;
+    public MongoCollection<Document> backpacksCollection;
+
+    public double cachedAcidRainDamageAmount;
+    public double cachedYLevel;
+
+    public ArrayList<UUID> spawning = new ArrayList<>();
 
     @Override
     public void onLoad() {
@@ -95,14 +134,23 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        this.getServer().getPluginManager().registerEvents(this, this);
 
+
+        try {
+            this.config = new FileHandler(this, "pray-config.yml", true);
+        } catch (IOException | InvalidConfigurationException e) {
+            getLogger().log(Level.SEVERE, "failed to initialize config file", e);
+        }
+
+        this.cachedAcidRainDamageAmount = config.getDouble("events.acid-rain.damage-amount");
+        this.cachedYLevel = config.getInt("lobby.drop-below-y");
+
+        registerEvents();
+        registerDatabase();
         findMobBorderEntity();
         loadMobBorderEntity();
 
-
         this.changes.addAll(getConfiguration().get(ChangeSettings.CHANGES).values());
-
 
         final var manager = new PaperCommandManager(this);
 
@@ -110,8 +158,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         manager.enableUnstableAPI("brigadier");
         manager.usePerIssuerLocale(true, true);
 
-        manager.registerCommand(new MobBorderCommand(this));
-
+        registerCommands(manager);
 
         try {
             if (getServer().getPluginManager().isPluginEnabled("PinataParty")) {
@@ -120,10 +167,43 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         } catch (final Throwable ex) {
             getLogger().log(Level.SEVERE, "failed to initialize PinataParty hook", ex);
         }
+        new EventManager().startGlobalEvents();
+        new SpigotExpansion().register();
+    }
+
+    public void registerCommands(PaperCommandManager manager) {
+        manager.registerCommand(new MobBorderCommand(this));
+        manager.registerCommand(new AnvilCommand(this));
+        manager.registerCommand(new SmithingTableCommand(this));
+        manager.registerCommand(new EnchantingTableCommand(this));
+        manager.registerCommand(new Stats(this));
+        manager.registerCommand(new Backpack(this));
+        manager.registerCommand(new PrayConfigReload(this));
+        manager.registerCommand(new SpawnCommand(this));
+    }
+
+    public void registerEvents() {
+        PluginManager pm = this.getServer().getPluginManager();
+
+        pm.registerEvents(this, this);
+//        this.getServer().getPluginManager().registerEvents(new PreEnchant(), this);
+        pm.registerEvents(new AutoSmelt(), this);
+        pm.registerEvents(new CombatTagEvent(), this);
+        pm.registerEvents(new StatsEvents(), this);
+        pm.registerEvents(new BackpackEvents(), this);
+        pm.registerEvents(new LuckyBlock(), this);
+        pm.registerEvents(new LobbyEvents(), this);
     }
 
     @Override
     public void onDisable() {
+
+        try {
+            config.save();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         HandlerList.unregisterAll(((Listener) this));
 
         saveMobBorderValues();
@@ -132,6 +212,13 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         INSTANCE = null;
 
         IGNORED.clear();
+    }
+
+    private void registerDatabase() {
+        mongoClient = MongoClients.create(Objects.requireNonNull(config.getString("database.conn-string")));
+        db = mongoClient.getDatabase(Objects.requireNonNull(config.getString("database.db-name")));
+        playerCollection = db.getCollection("BorderPlayerInfo");
+        backpacksCollection = db.getCollection("BackpacksInfo");
     }
 
 
@@ -166,7 +253,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerMove(@NotNull final PlayerMoveEvent event) {
-        final var entity  = this.entity;
+        final var entity = this.entity;
         final var vehicle = event.getPlayer().getVehicle();
         if (vehicle == null || entity == null || !entity.uuid().equals(vehicle.getUniqueId()) || !event.hasExplicitlyChangedBlock()) {
             return;
@@ -257,38 +344,48 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
 
         added.stream()
-             .map(item -> event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item))
-             .forEach(event.getItems()::add);
+                .map(item -> event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item))
+                .forEach(event.getItems()::add);
     }
 
 
-    @EventHandler
-    public void onPlayerJoin(@NotNull final PlayerJoinEvent event) {
-        if (!getConfiguration().get(BorderSettings.TELEPORT_IN_ON_JOIN)) {
-            return;
-        }
+    public void teleportToWorld(@NotNull final Player player) {
 
         final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
         if (entity == null) {
             return;
         }
 
-        final var border = event.getPlayer().getWorld().getWorldBorder();
-        if (border.isInside(event.getPlayer().getLocation())) {
-            return;
-        }
+        final var border = entity.getWorld().getWorldBorder();
 
-        event.getPlayer().setInvulnerable(true);
+        player.setInvulnerable(true);
 
         RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
-                      .find()
-                      .orTimeout(10L, TimeUnit.SECONDS)
-                      .whenComplete((location, throwable) -> getServer().getScheduler().runTask(this, () ->
-                      {
-                          event.getPlayer().setInvulnerable(false);
+                .find()
+                .orTimeout(10L, TimeUnit.SECONDS)
+                .whenComplete((location, throwable) -> getServer().getScheduler().runTask(this, () ->
+                {
+                    player.teleportAsync(location != null ? location : entity.getLocation());
+                }));
 
-                          event.getPlayer().teleportAsync(location != null ? location : entity.getLocation());
-                      }));
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                player.setInvulnerable(false);
+            }
+        }.runTaskLater(this, 20);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoinTeleportToLobby(PlayerJoinEvent event) {
+        if (Bukkit.getWorld("lobby") == null) return;
+        Location loc = new Location(Bukkit.getWorld("lobby"), config.getDouble("lobby.spawn.x"), config.getDouble("lobby.spawn.y"), config.getDouble("lobby.spawn.z"));
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                event.getPlayer().teleport(loc);
+            }
+        }.runTaskLater(this, 10);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -325,13 +422,13 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
 
         final var border = getConfiguration().get(BorderSettings.RESPAWN_WITH_ENTITY) ?
-                           entity.getWorld().getWorldBorder() :
-                           event.getPlayer().getWorld().getWorldBorder();
+                entity.getWorld().getWorldBorder() :
+                event.getPlayer().getWorld().getWorldBorder();
 
         RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
-                      .findNow()
-                      .ifPresentOrElse(event::setRespawnLocation,
-                                       () -> event.setRespawnLocation(entity.getLocation()));
+                .findNow()
+                .ifPresentOrElse(event::setRespawnLocation,
+                        () -> event.setRespawnLocation(entity.getLocation()));
     }
 
 
@@ -404,7 +501,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     public void loadMobBorderEntity() {
         final var origin = LocationCodec.decode(getConfiguration().get(BorderSettings.BORDER_ORIGIN))
-                                        .orElse(null);
+                .orElse(null);
 
         if (origin == null) {
             return;
@@ -426,7 +523,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     public void killMobBorderEntity(final boolean allowRespawning) {
         final var entity = getEntity().flatMap(MobBorderEntity::live)
-                                      .orElse(null);
+                .orElse(null);
 
         if (entity != null) {
             if (!allowRespawning) {
@@ -460,8 +557,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     public void saveMobBorderValues(@Nullable final Entity override) {
         final var entity = Optional.ofNullable(override)
-                                   .or(() -> getEntity().flatMap(MobBorderEntity::live))
-                                   .orElse(null);
+                .or(() -> getEntity().flatMap(MobBorderEntity::live))
+                .orElse(null);
         if (entity == null) {
             return;
         }
@@ -473,7 +570,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     public void updateEntityValues(@NotNull final Entity entity) {
         entity.getPersistentDataContainer()
-              .set(namespace, PersistentDataType.PrimitivePersistentDataType.BYTE, ((byte) 1));
+                .set(namespace, PersistentDataType.PrimitivePersistentDataType.BYTE, ((byte) 1));
 
 
         final var name = getConfiguration().get(EntitySettings.ENTITY_NAME);
@@ -487,6 +584,16 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }
 
         entity.setInvulnerable(true);
+
+        ItemStack frostWalkerBoots = new ItemStack(Material.NETHERITE_BOOTS);
+        ItemMeta fwbMeta = frostWalkerBoots.getItemMeta();
+        fwbMeta.addEnchant(Enchantment.FROST_WALKER, 1, true);
+        frostWalkerBoots.setItemMeta(fwbMeta);
+
+        if (entity instanceof LivingEntity) {
+            ((LivingEntity) entity).getEquipment().setBoots(frostWalkerBoots);
+        }
+
         entity.setSilent(getConfiguration().get(EntitySettings.ENTITY_SILENT));
 
         entity.setGlowing(getConfiguration().get(EntitySettings.ENTITY_GLOWING));
@@ -553,26 +660,26 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
 
         final var nether = Optional.of(entity.getWorld().getName() + "_nether")
-                                   .map(Bukkit::getWorld)
-                                   .map(World::getWorldBorder)
-                                   .orElse(null);
+                .map(Bukkit::getWorld)
+                .map(World::getWorldBorder)
+                .orElse(null);
 
         if (nether != null) {
             nether.setCenter(entity.getLocation());
         }
 
         final var theend = Optional.of(entity.getWorld().getName() + "_the_end")
-                                   .map(Bukkit::getWorld)
-                                   .map(World::getWorldBorder)
-                                   .orElse(null);
+                .map(Bukkit::getWorld)
+                .map(World::getWorldBorder)
+                .orElse(null);
 
         if (theend != null) {
             theend.setCenter(entity.getLocation());
         }
 
 
-        final var size     = getConfiguration().get(BorderSettings.BORDER_SIZE);
-        final var hurt     = getConfiguration().get(BorderSettings.BORDER_HURT);
+        final var size = getConfiguration().get(BorderSettings.BORDER_SIZE);
+        final var hurt = getConfiguration().get(BorderSettings.BORDER_HURT);
         final var distHurt = getConfiguration().get(BorderSettings.BORDER_DIST_HURT);
         final var distWarn = getConfiguration().get(BorderSettings.BORDER_DIST_WARN);
 
@@ -591,8 +698,8 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         if (nether != null) {
             final var scaledSize = size < 16 || !getConfiguration().get(BorderSettings.BORDER_SCALING) ?
-                                   size :
-                                   size / 8;
+                    size :
+                    size / 8;
 
             nether.setSize(scaledSize);
             nether.setDamageAmount(hurt);

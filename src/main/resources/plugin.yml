@@ -2,10 +2,11 @@ name: "JMCMobBorder"
 main: "com.sxtanna.mc.mb.MobBorderPlugin"
 
 version: "$version"
-authors: ["Sxtanna"]
+authors: ["Sxtanna", "Pray"]
 
 api-version: "1.18"
 description: "Mob Tracking World Border"
 
 softdepend:
   - "PinataParty"
+  - "PlaceholderAPI"
