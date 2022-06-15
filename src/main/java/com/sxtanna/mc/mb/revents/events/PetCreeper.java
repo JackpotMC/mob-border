@@ -30,8 +30,16 @@ public class PetCreeper {
                 }
 
                 Bukkit.getOnlinePlayers().forEach(player -> {
+                    if (player.getWorld().getName().equalsIgnoreCase("lobby")) return;
                     Location spawnLoc = player.getLocation();
-                    player.getWorld().spawnEntity(newLocation(spawnLoc), EntityType.CREEPER);
+                    Location newLoc = newLocation(spawnLoc).add(0, 1, 0);
+                    int i = 0;
+                    while (!player.getWorld().getWorldBorder().isInside(newLoc)) {
+                        if (i == 3) return;
+                        newLoc = newLocation(spawnLoc).add(0, 1, 0);
+                        i++;
+                    }
+                    player.getWorld().spawnEntity(spawnLoc, EntityType.CREEPER);
                 });
 
                 i++;
@@ -59,7 +67,7 @@ public class PetCreeper {
             loc.add(0, 0, 5);
         }
 
-        loc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()));
+        loc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()) + 1);
 
         return loc;
     }

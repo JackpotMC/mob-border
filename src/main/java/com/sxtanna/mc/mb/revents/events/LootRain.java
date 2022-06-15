@@ -1,14 +1,15 @@
 package com.sxtanna.mc.mb.revents.events;
 
 import com.sxtanna.mc.mb.MobBorderPlugin;
+import com.sxtanna.mc.mb.util.BukkitSerialization;
 import com.sxtanna.mc.mb.util.ColorUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -34,7 +35,12 @@ public class LootRain {
                 }
 
                 Bukkit.getOnlinePlayers().forEach(player -> {
-                    dropItems(player);
+                    if (player.getWorld().getName().equalsIgnoreCase("lobby")) return;
+                    try {
+                        dropItems(player);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 });
 
 
@@ -45,19 +51,25 @@ public class LootRain {
 
     }
 
-    private void dropItems(Player player) {
+    private void dropItems(Player player) throws IOException {
         List<String> possibleItems = plugin.config.getStringList("events.loot-rain.possible-items");
-        int droppedItem = 0;
+        int droppedItem = 1;
         while (droppedItem < plugin.config.getInt("events.loot-rain.rewards-amount")) {
             for (String s : possibleItems) {
                 String[] args = s.split("\\s+");
-                int percentage = Integer.parseInt(args[2]);
-                int amount = Integer.parseInt(args[1]);
-                Material reward = Material.valueOf(args[0]);
+
+                String finalItem = "";
+                for (int i = 0; i < args.length - 2; i++) {
+                    finalItem += args[i] + " ";
+                }
+
+                ItemStack reward = BukkitSerialization.itemStackFromBase64(finalItem);
+                int percentage = Integer.parseInt(args[args.length - 1]);
 
                 int random = (int) (Math.random() * 100);
                 if (percentage <= random) {
-                    player.getWorld().dropItemNaturally(findValidLocation(player.getLocation()), new ItemStack(reward, amount));
+                    if (reward == null) continue;
+                    player.getWorld().dropItemNaturally(findValidLocation(player.getLocation()), reward);
                     droppedItem++;
                 }
             }

@@ -16,8 +16,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-
 @CommandAlias("spawn")
 @CommandPermission("jmc.spawn")
 public class SpawnCommand extends BaseCommand {
@@ -32,15 +30,15 @@ public class SpawnCommand extends BaseCommand {
     }
 
     @Default
-    public void spawnCommand(@NotNull final CommandSender sender) throws IOException {
+    public void spawnCommand(@NotNull final CommandSender sender) {
         if (sender instanceof Player player) {
 
             World world = Bukkit.getWorld("lobby");
             double x = plugin.config.getDouble("lobby.spawn.x");
             double y = plugin.config.getDouble("lobby.spawn.y");
             double z = plugin.config.getDouble("lobby.spawn.z");
-            if (world == null || x == 0.0D || y == 0.0D || z == 0.0D) {
-                sender.sendMessage(format("&cNo spawn has been setup yet, please contact an Administrator."));
+            if (world == null) {
+                sender.sendMessage(format("&cNo spawn world has been setup yet, please contact an Administrator."));
                 return;
             }
 
@@ -48,7 +46,6 @@ public class SpawnCommand extends BaseCommand {
             if (!api.isTagged(player)) {
                 if (player.hasPermission("jmc.admin.spawnbypass")) {
                     player.teleport(loc);
-                    player.getInventory().clear();
                     player.sendMessage(format(plugin.config.getString("lobby.spawn.success")));
                 } else {
                     startTimer(player, loc);
@@ -72,7 +69,6 @@ public class SpawnCommand extends BaseCommand {
                 }
                 if (time == 0) {
                     player.teleport(loc);
-                    player.getInventory().clear();
                     player.sendMessage(format(plugin.config.getString("lobby.spawn.success")));
                     this.cancel();
                     return;

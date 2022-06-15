@@ -20,11 +20,13 @@ public class EndPortal {
 
     public void spawnRandomEndPortal() {
 
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            p.sendTitle(ColorUtil.getHex("#aa1babE#b128b4N#b934beD #c041c7P#c84dd0O#cf5adaR#d766e3T#de73ecA#e67ff6L#ed8cff!"), ColorUtil.getHex("#aa1babT#af23b1h#b42bb7e #b833bdd#bd3bc3r#c243c9a#c74bcfg#cc54d5o#d05cdbn #d564e1a#da6ce7w#df74eda#e37cf3i#e884f9t#ed8cffs"), 10, 60, 10);
-        }
+        Location validLoc = findValidLocation(plugin.getEntity().get().location());
 
-        createEndPortal(findValidLocation(plugin.getEntity().get().location()));
+        createEndPortal(validLoc);
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.sendTitle(ColorUtil.getHex("#aa1babE#b128b4N#b934beD #c041c7P#c84dd0O#cf5adaR#d766e3T#de73ecA#e67ff6L#ed8cff!"), ColorUtil.getHex("#D000BB(" + (int) validLoc.getX() + ", " + (int) validLoc.getY() + ", " + (int) validLoc.getZ() + ")"), 10, 80, 10);
+        }
 
         new BukkitRunnable() {
             @Override
@@ -122,12 +124,17 @@ public class EndPortal {
         locations.add(loc1);
         w.getBlockAt(loc1).setType(Material.END_PORTAL_FRAME);
         loc1 = origLoc1.clone();
+        locations.add(loc1);
     }
 
     private Location findValidLocation(Location center) {
         Location spawnLoc = center.clone();
         int randomX = ThreadLocalRandom.current().nextInt(0, 26);
         int randomZ = ThreadLocalRandom.current().nextInt(0, 26);
+        while (!Bukkit.getWorld("world").getWorldBorder().isInside(spawnLoc.add(randomX, 5, randomZ))) {
+            randomX = ThreadLocalRandom.current().nextInt(0, 26);
+            randomZ = ThreadLocalRandom.current().nextInt(0, 26);
+        }
         spawnLoc.add(randomX, 5, randomZ);
         return spawnLoc;
     }

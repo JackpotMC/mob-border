@@ -1,23 +1,44 @@
 package com.sxtanna.mc.mb.revents.events;
 
 import com.sxtanna.mc.mb.MobBorderPlugin;
+import com.sxtanna.mc.mb.util.BukkitSerialization;
 import com.sxtanna.mc.mb.util.ColorUtil;
 import org.bukkit.*;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
-public class AirDrops {
+public class AirDrops implements Listener {
 
     private final MobBorderPlugin plugin = MobBorderPlugin.INSTANCE;
-    private ArrayList<Location> locations = new ArrayList<>();
+
+    @EventHandler
+    public void onChestClose(InventoryCloseEvent event) {
+        Inventory inv = event.getInventory();
+        if (inv.getHolder() instanceof Chest) {
+            Chest chest = (Chest) inv.getHolder();
+            if (!plugin.airdropLocations.contains(chest.getLocation())) return;
+            ItemStack[] contents = chest.getBlockInventory().getContents();
+            for (ItemStack item : contents) {
+                if (item == null) continue;
+                inv.getLocation().getWorld().dropItemNaturally(inv.getLocation(), item);
+            }
+            inv.getLocation().getBlock().setType(Material.AIR);
+            plugin.airdropLocations.remove(inv.getLocation());
+        }
+    }
 
     public void spawnAirdrops() {
 
@@ -34,19 +55,29 @@ public class AirDrops {
             @Override
             public void run() {
                 if (i >= amountPerPlayer) {
-                    clearLocs();
                     this.cancel();
                 }
 
                 Bukkit.getOnlinePlayers().forEach(player -> {
-                    Location airdropLoc = randomLocation(player.getLocation());
+                    if (player.getWorld().getName().equalsIgnoreCase("lobby")) return;
+                    Location airdropLoc = randomLocation(player.getLocation()).add(0, 1, 0);
+                    int i = 0;
+                    while (!player.getWorld().getWorldBorder().isInside(airdropLoc)) {
+                        if (i == 3) return;
+                        airdropLoc = randomLocation(player.getLocation()).add(0, 1, 0);
+                        i++;
+                    }
                     player.getWorld().getBlockAt(airdropLoc).setType(Material.CHEST);
                     airdropLoc.getBlock().setMetadata("airdrop", new FixedMetadataValue(plugin, airdropLoc.getBlock()));
                     if (airdropLoc.getBlock().getType() == Material.CHEST) {
-                        fillChest((Chest) airdropLoc.getBlock().getState());
+                        try {
+                            fillChest((Chest) airdropLoc.getBlock().getState());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     particilizeAirdrop(airdropLoc);
-                    locations.add(airdropLoc);
+                    plugin.airdropLocations.add(airdropLoc.getBlock().getLocation());
                 });
 
                 i++;
@@ -83,59 +114,45 @@ public class AirDrops {
         }.runTaskTimer(plugin, 0, 10);
     }
 
-    public void fillChest(Chest chest) {
-        Location blockLoc = chest.getLocation();
+    public void fillChest(Chest chest) throws IOException {
         List<String> possibleItems = plugin.config.getStringList("events.airdrops.possible-items");
-        int addedItem = 0;
+        int addedItem = 1;
         int dropAmount = plugin.config.getInt("events.airdrops.rewards-amount");
-        ItemStack[] rewardContents = new ItemStack[dropAmount];
         while (addedItem < dropAmount) {
             for (String s : possibleItems) {
                 String[] args = s.split("\\s+");
-                int percentage = Integer.parseInt(args[2]);
-                int amount = Integer.parseInt(args[1]);
-                Material reward = Material.valueOf(args[0]);
+
+                String finalItem = "";
+                for (int i = 0; i < args.length - 2; i++) {
+                    finalItem += args[i] + " ";
+                }
+
+                ItemStack reward = BukkitSerialization.itemStackFromBase64(finalItem);
+                int percentage = Integer.parseInt(args[args.length - 1]);
 
                 int random = (int) (Math.random() * 100);
                 if (percentage <= random) {
-                    blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(reward, amount));
+                    if (reward == null) continue;
+                    int i = ThreadLocalRandom.current().nextInt(0, 27);
+
+                    while (chest.getBlockInventory().getItem(i) != null) {
+                        i = ThreadLocalRandom.current().nextInt(0, 27);
+                    }
+
+                    chest.getBlockInventory().setItem(i, reward);
                     addedItem++;
                 }
             }
         }
-        chest.getInventory().setContents(rewardContents);
     }
 
     public Location randomLocation(Location loc) {
-        int x = (int) Math.round(Math.random());
-        int y = (int) Math.round(Math.random());
-
-        if (x == 0 && y == 0) {
-            loc.add(15, 0, 15);
-            loc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()));
-            return loc;
-        }
-
-
-        if (x == 1) {
-            loc.add(15, 0, 0);
-        }
-
-        if (y == 1) {
-            loc.add(0, 0, 15);
-        }
+        int randomX = ThreadLocalRandom.current().nextInt(0, 15);
+        int randomZ = ThreadLocalRandom.current().nextInt(0, 15);
 
         loc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()));
+        loc.add(randomX, 0, randomZ);
 
         return loc;
     }
-
-    private void clearLocs() {
-        for (Location loc : locations) {
-            loc.getBlock().setType(Material.AIR);
-        }
-
-        locations.clear();
-    }
-
 }

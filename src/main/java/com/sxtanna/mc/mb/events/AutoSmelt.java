@@ -3,6 +3,7 @@ package com.sxtanna.mc.mb.events;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,11 +22,11 @@ public class AutoSmelt implements Listener {
             switch (event.getBlock().getType()) {
                 case IRON_ORE, DEEPSLATE_IRON_ORE -> {
                     event.setCancelled(true);
-                    block.setType(Material.AIR);
                     if (player.hasPermission("jmc.donator.double-ores")) {
                         blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.IRON_INGOT, block.getDrops().size()));
                     }
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.IRON_INGOT, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }
@@ -36,6 +37,7 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.GOLD_INGOT, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }
@@ -46,6 +48,7 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.COAL, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }
@@ -56,6 +59,8 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.COPPER_INGOT, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
+
 
                     block.setType(Material.AIR);
                 }
@@ -66,6 +71,7 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.LAPIS_LAZULI, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }
@@ -76,6 +82,7 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.EMERALD, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }
@@ -86,6 +93,7 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.DIAMOND, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }
@@ -96,6 +104,7 @@ public class AutoSmelt implements Listener {
                     }
 
                     blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(Material.REDSTONE, block.getDrops().size()));
+                    blockLoc.getWorld().spawn(blockLoc, ExperienceOrb.class).setExperience(event.getExpToDrop());
 
                     block.setType(Material.AIR);
                 }

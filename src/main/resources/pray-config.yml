@@ -31,13 +31,11 @@ backpack:
     disabled-message: "&cYou cannot drop your backpack! Remove it from your inventory with /backpack remove"
     enabled: true
     deleted-message: "&cYou have dropped your backpack, you can get another one with /backpack give."
+  inventory:
+    #HIGHLY RECOMMEND CHANGING NAME WHILE THE SERVER IS OFFLINE, EDITING WHILE THE SERVER IS ONLINE COULD LEAD TO DATA LOSS!
+    name: "&7Backpack"
   item:
-    material: "BARREL"
-    amount: 1
-    name: "&aBackpack"
-    lore:
-      - "&a"
-      - "&cThis is a lore line"
+    data: ""
 
 lobby:
   drop-below-y: 40

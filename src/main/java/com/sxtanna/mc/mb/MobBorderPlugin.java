@@ -6,10 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.sxtanna.mc.mb.cmds.Backpack;
-import com.sxtanna.mc.mb.cmds.MobBorderCommand;
-import com.sxtanna.mc.mb.cmds.PrayConfigReload;
-import com.sxtanna.mc.mb.cmds.SpawnCommand;
+import com.sxtanna.mc.mb.cmds.*;
 import com.sxtanna.mc.mb.cmds.pray.donator.AnvilCommand;
 import com.sxtanna.mc.mb.cmds.pray.donator.EnchantingTableCommand;
 import com.sxtanna.mc.mb.cmds.pray.donator.SmithingTableCommand;
@@ -23,9 +20,11 @@ import com.sxtanna.mc.mb.data.BlockDropChange;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.events.AutoSmelt;
 import com.sxtanna.mc.mb.events.BackpackEvents;
+import com.sxtanna.mc.mb.events.HideInLobby;
 import com.sxtanna.mc.mb.events.LobbyEvents;
 import com.sxtanna.mc.mb.events.stats.StatsEvents;
 import com.sxtanna.mc.mb.revents.EventManager;
+import com.sxtanna.mc.mb.revents.events.AirDrops;
 import com.sxtanna.mc.mb.revents.events.LuckyBlock;
 import com.sxtanna.mc.mb.util.FileHandler;
 import com.sxtanna.mc.mb.util.LocationCodec;
@@ -127,6 +126,10 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
     public ArrayList<UUID> spawning = new ArrayList<>();
 
+    public List<UUID> hiddenPlayers = new ArrayList<>();
+
+    public ArrayList<Location> airdropLocations = new ArrayList<>();
+
     @Override
     public void onLoad() {
         INSTANCE = this;
@@ -180,6 +183,7 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         manager.registerCommand(new Backpack(this));
         manager.registerCommand(new PrayConfigReload(this));
         manager.registerCommand(new SpawnCommand(this));
+        manager.registerCommand(new StartEvents(this));
     }
 
     public void registerEvents() {
@@ -193,14 +197,27 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         pm.registerEvents(new BackpackEvents(), this);
         pm.registerEvents(new LuckyBlock(), this);
         pm.registerEvents(new LobbyEvents(), this);
+        pm.registerEvents(new HideInLobby(), this);
+        pm.registerEvents(new AirDrops(), this);
     }
 
     @Override
     public void onDisable() {
 
+        hiddenPlayers.forEach(uuid -> {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (Bukkit.getPlayer(uuid) == null) return;
+                if (uuid == p.getUniqueId()) return;
+                p.showPlayer(this, Bukkit.getPlayer(uuid));
+            }
+        });
+
+        hiddenPlayers.clear();
+
         try {
+            config.reload();
             config.save();
-        } catch (IOException e) {
+        } catch (IOException | InvalidConfigurationException e) {
             throw new RuntimeException(e);
         }
 
@@ -376,16 +393,17 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
         }.runTaskLater(this, 20);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onJoinTeleportToLobby(PlayerJoinEvent event) {
         if (Bukkit.getWorld("lobby") == null) return;
+        if (event.getPlayer().getWorld().getWorldBorder().isInside(event.getPlayer().getLocation())) return;
         Location loc = new Location(Bukkit.getWorld("lobby"), config.getDouble("lobby.spawn.x"), config.getDouble("lobby.spawn.y"), config.getDouble("lobby.spawn.z"));
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                event.getPlayer().teleport(loc);
-            }
-        }.runTaskLater(this, 10);
+        event.getPlayer().teleport(loc);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onJoinTeleportToLobby(PlayerRespawnEvent event) {
+        teleportToWorld(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -404,33 +422,6 @@ public final class MobBorderPlugin extends JavaPlugin implements Listener {
 
         event.getPlayer().leaveVehicle(); // just to make sure
     }
-
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onRespawning(@NotNull final PlayerRespawnEvent event) {
-        if (event.getRespawnFlags().contains(PlayerRespawnEvent.RespawnFlag.END_PORTAL)) {
-            return;
-        }
-
-        if (!getConfiguration().get(BorderSettings.RANDOMIZED_RESPAWNS)) {
-            return;
-        }
-
-        final var entity = getEntity().flatMap(MobBorderEntity::live).orElse(null);
-        if (entity == null) {
-            return;
-        }
-
-        final var border = getConfiguration().get(BorderSettings.RESPAWN_WITH_ENTITY) ?
-                entity.getWorld().getWorldBorder() :
-                event.getPlayer().getWorld().getWorldBorder();
-
-        RandomLocation.of(this, border.getCenter(), (int) (border.getSize() / 2))
-                .findNow()
-                .ifPresentOrElse(event::setRespawnLocation,
-                        () -> event.setRespawnLocation(entity.getLocation()));
-    }
-
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityRide(@NotNull final VehicleEnterEvent event) {

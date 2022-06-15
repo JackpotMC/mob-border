@@ -103,7 +103,6 @@ public class StatsEvents implements Listener {
     }
 
     private void addUser(UUID UUID, int kills, int deaths, String kdRatio, Long playtime, Long joinTime, int oresMined) {
-        //String.valueOf(Math.round((kills / deaths * 100)) / 100.0D) - kd
         Document playerDoc = new Document().append("UUID", UUID.toString()).append("Kills", kills).append("Deaths", deaths).append("KD", kdRatio).append("Playtime", playtime).append("JoinTime", joinTime).append("OresMined", oresMined);
         plugin.playerCollection.insertOne(playerDoc);
     }
@@ -131,7 +130,12 @@ public class StatsEvents implements Listener {
         Document first = plugin.playerCollection.find(query).first();
         Integer k = first.getInteger("Kills");
         Integer d = first.getInteger("Deaths");
-        Bson kd = Updates.set("KD", String.valueOf(Math.round((k / d * 100)) / 100.0D));
+        Bson kd;
+        if (d == 0) {
+            kd = Updates.set("KD", String.valueOf(k));
+        } else {
+            kd = Updates.set("KD", String.valueOf(Math.round((k / d * 100)) / 100.0D));
+        }
         plugin.playerCollection.findOneAndUpdate(first, kd);
     }
 

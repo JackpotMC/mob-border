@@ -1,10 +1,9 @@
 package com.sxtanna.mc.mb.revents.events;
 
 import com.sxtanna.mc.mb.MobBorderPlugin;
+import com.sxtanna.mc.mb.util.BukkitSerialization;
 import com.sxtanna.mc.mb.util.ColorUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,8 +14,10 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class LuckyBlock implements Listener {
 
@@ -33,18 +34,24 @@ public class LuckyBlock implements Listener {
 
         new BukkitRunnable() {
 
-            int i = 0;
+            int i = 1;
             final int amountPerPlayer = plugin.config.getInt("events.luckyblocks.amount-per-player");
 
             @Override
             public void run() {
                 if (i >= amountPerPlayer) {
-                    clearLocs();
                     this.cancel();
                 }
 
                 Bukkit.getOnlinePlayers().forEach(player -> {
-                    Location luckyBlockLoc = randomLocation(player.getLocation());
+                    if (player.getWorld().getName().equalsIgnoreCase("lobby")) return;
+                    Location luckyBlockLoc = randomLocation(player.getLocation()).add(0, 1, 0);
+                    int i = 0;
+                    while (!player.getWorld().getWorldBorder().isInside(luckyBlockLoc)) {
+                        if (i == 3) return;
+                        luckyBlockLoc = randomLocation(player.getLocation()).add(0, 1, 0);
+                        i++;
+                    }
                     player.getWorld().getBlockAt(luckyBlockLoc).setType(Material.valueOf(plugin.config.getString("events.luckyblocks.material").toUpperCase()));
                     //lbl = Lucky Block Locations
                     luckyBlockLoc.getBlock().setMetadata("luckyblock", new FixedMetadataValue(plugin, luckyBlockLoc.getBlock()));
@@ -58,7 +65,7 @@ public class LuckyBlock implements Listener {
     }
 
     @EventHandler
-    public void onLuckyBlockClick(PlayerInteractEvent event) {
+    public void onLuckyBlockClick(PlayerInteractEvent event) throws IOException {
         if (event.getClickedBlock() == null) return;
         if (!isLuckyBlock(event.getClickedBlock())) return;
         Block block = event.getClickedBlock();
@@ -66,25 +73,30 @@ public class LuckyBlock implements Listener {
 
         event.setCancelled(true);
         block.setType(Material.AIR);
-        blockLoc.getWorld().createExplosion(block.getX(), block.getY(), block.getZ(), 3, false, false);
+        blockLoc.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, blockLoc, 15, 0, 0, 0);
         List<String> possibleItems = plugin.config.getStringList("events.luckyblocks.possible-items");
-        int droppedItem = 0;
+        int droppedItem = 1;
         while (droppedItem < plugin.config.getInt("events.luckyblocks.rewards-amount")) {
             for (String s : possibleItems) {
                 String[] args = s.split("\\s+");
-                int percentage = Integer.parseInt(args[2]);
-                int amount = Integer.parseInt(args[1]);
-                Material reward = Material.valueOf(args[0]);
+
+                String finalItem = "";
+                for (int i = 0; i < args.length - 2; i++) {
+                    finalItem += args[i] + " ";
+                }
+
+                ItemStack reward = BukkitSerialization.itemStackFromBase64(finalItem);
+                int percentage = Integer.parseInt(args[args.length - 1]);
 
                 int random = (int) (Math.random() * 100);
                 if (percentage <= random) {
-                    blockLoc.getWorld().dropItemNaturally(blockLoc, new ItemStack(reward, amount));
+                    if (reward == null) continue;
+                    blockLoc.getWorld().dropItemNaturally(blockLoc, reward);
                     droppedItem++;
                 }
             }
         }
     }
-
 
 
     public boolean isLuckyBlock(Block b) {
@@ -96,36 +108,16 @@ public class LuckyBlock implements Listener {
     }
 
     public Location randomLocation(Location loc) {
-        int x = (int) Math.round(Math.random());
-        int y = (int) Math.round(Math.random());
 
-        if (x == 0 && y == 0) {
-            loc.add(15, 0, 15);
-            loc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()));
-            return loc;
-        }
-
-
-        if (x == 1) {
-            loc.add(15, 0, 0);
-        }
-
-        if (y == 1) {
-            loc.add(0, 0, 15);
-        }
+        int randomX = ThreadLocalRandom.current().nextInt(0, 15);
+        int randomZ = ThreadLocalRandom.current().nextInt(0, 15);
 
         loc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()));
+        loc.add(randomX, 0, randomZ);
 
         return loc;
     }
 
-    private void clearLocs() {
-        for (Location loc : locations) {
-            loc.getBlock().setType(Material.AIR);
-        }
-
-        locations.clear();
-    }
 
     public String format(String string) {
         return string.replace("&", "§");

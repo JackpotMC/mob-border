@@ -2,23 +2,24 @@ package com.sxtanna.mc.mb.cmds;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
-import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.CommandCompletion;
-import co.aikar.commands.annotation.CommandPermission;
-import co.aikar.commands.annotation.Default;
-import co.aikar.commands.annotation.Flags;
-import co.aikar.commands.annotation.HelpCommand;
-import co.aikar.commands.annotation.Subcommand;
+import co.aikar.commands.annotation.*;
 import com.sxtanna.mc.mb.MobBorderPlugin;
 import com.sxtanna.mc.mb.conf.sections.BorderSettings;
 import com.sxtanna.mc.mb.conf.sections.EntitySettings;
 import com.sxtanna.mc.mb.data.MobBorderEntity;
+import com.sxtanna.mc.mb.util.BukkitSerialization;
 import com.sxtanna.mc.mb.util.LocationCodec;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.List;
 
 @CommandAlias("mobborder|mborder|mb")
 @CommandPermission("jmc.mobborder")
@@ -45,8 +46,8 @@ public final class MobBorderCommand extends BaseCommand {
     @CommandPermission("jmc.mobborder.create")
     public void create(@NotNull final CommandSender sender, @NotNull final World world) {
         final var origin = sender instanceof Player player && world.equals(player.getWorld()) ?
-                           player.getLocation() :
-                           world.getSpawnLocation();
+                player.getLocation() :
+                world.getSpawnLocation();
 
         this.plugin.getConfiguration().setProperty(BorderSettings.BORDER_ORIGIN, LocationCodec.encode(origin));
         this.plugin.getConfiguration().save();
@@ -74,8 +75,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateWorldBorders);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateWorldBorders);
     }
 
     @Subcommand("damage")
@@ -86,8 +87,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateWorldBorders);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateWorldBorders);
     }
 
     @Subcommand("scaling")
@@ -98,8 +99,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateWorldBorders);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateWorldBorders);
     }
 
 
@@ -110,8 +111,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateEntityValues);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateEntityValues);
     }
 
     @Subcommand("entity silent")
@@ -122,8 +123,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateEntityValues);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateEntityValues);
     }
 
     @Subcommand("entity glowing")
@@ -134,8 +135,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateEntityValues);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateEntityValues);
     }
 
     @Subcommand("entity speed")
@@ -146,8 +147,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateEntityValues);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateEntityValues);
     }
 
     @Subcommand("entity freeze")
@@ -158,8 +159,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
 
         this.plugin.getEntity()
-                   .flatMap(MobBorderEntity::live)
-                   .ifPresent(this.plugin::updateEntityValues);
+                .flatMap(MobBorderEntity::live)
+                .ifPresent(this.plugin::updateEntityValues);
     }
 
 
@@ -171,6 +172,66 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.getConfiguration().save();
     }
 
+    @Subcommand("events luckyblock add")
+    @CommandPermission("jmc.mobborder.events.luckyblocks")
+    @CommandCompletion("10")
+    public void luckyblocksAddItem(@NotNull final CommandSender sender, @Default("10") @Flags("min=1,max=100") final int chance) throws IOException, InvalidConfigurationException {
+        List<String> items = plugin.config.getStringList("events.luckyblocks.possible-items");
+
+        if (sender instanceof Player player) {
+            if (player.getInventory().getItemInMainHand().getType() == Material.AIR) {
+                player.sendMessage(format("&cYou can't add air to the list of rewards!"));
+                return;
+            }
+            items.add(BukkitSerialization.itemStackToBase64(player.getInventory().getItemInMainHand()) + " 1 " + chance);
+            plugin.config.set("events.luckyblocks.possible-items", items);
+            plugin.config.save();
+            player.sendMessage(format("&aSuccessfully added your item to the list of possible rewards with the chance of: &l" + chance + "%"));
+        } else {
+            sender.sendMessage(format("&cYou are not a player."));
+        }
+    }
+
+    @Subcommand("events airdrops add")
+    @CommandPermission("jmc.mobborder.events.airdrops")
+    @CommandCompletion("10")
+    public void airdropsAddItem(@NotNull final CommandSender sender, @Default("10") @Flags("min=1,max=100") final int chance) throws IOException, InvalidConfigurationException {
+        List<String> items = plugin.config.getStringList("events.airdrops.possible-items");
+
+        if (sender instanceof Player player) {
+            if (player.getInventory().getItemInMainHand().getType() == Material.AIR) {
+                player.sendMessage(format("&cYou can't add air to the list of rewards!"));
+                return;
+            }
+            items.add(BukkitSerialization.itemStackToBase64(player.getInventory().getItemInMainHand()) + " 1 " + chance);
+            plugin.config.set("events.airdrops.possible-items", items);
+            plugin.config.save();
+            player.sendMessage(format("&aSuccessfully added your item to the list of possible rewards with the chance of: &l" + chance + "%"));
+        } else {
+            sender.sendMessage(format("&cYou are not a player."));
+        }
+    }
+
+    @Subcommand("events lootrain add")
+    @CommandPermission("jmc.mobborder.events.lootrain")
+    @CommandCompletion("10")
+    public void addItem(@NotNull final CommandSender sender, @Default("10") @Flags("min=1,max=100") final int chance) throws IOException, InvalidConfigurationException {
+        List<String> items = plugin.config.getStringList("events.loot-rain.possible-items");
+
+        if (sender instanceof Player player) {
+            if (player.getInventory().getItemInMainHand().getType() == Material.AIR) {
+                player.sendMessage(format("&cYou can't add air to the list of rewards!"));
+                return;
+            }
+            items.add(BukkitSerialization.itemStackToBase64(player.getInventory().getItemInMainHand()) + " 1 " + chance);
+            plugin.config.set("events.loot-rain.possible-items", items);
+            plugin.config.save();
+            player.sendMessage(format("&aSuccessfully added your item to the list of possible rewards with the chance of: &l" + chance + "%"));
+        } else {
+            sender.sendMessage(format("&cYou are not a player."));
+        }
+    }
+
 
     @Subcommand("reload")
     @CommandPermission("jmc.mobborder.reload")
@@ -178,4 +239,8 @@ public final class MobBorderCommand extends BaseCommand {
         this.plugin.reload();
     }
 
+
+    private String format(String s) {
+        return ChatColor.translateAlternateColorCodes('&', s);
+    }
 }

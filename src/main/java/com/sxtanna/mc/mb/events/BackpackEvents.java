@@ -29,7 +29,7 @@ public class BackpackEvents implements Listener {
 
     @EventHandler
     public void onBackpackClose(InventoryCloseEvent event) {
-        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase("Backpack")) {
+        if (ChatColor.stripColor(event.getView().getTitle()).equalsIgnoreCase(plugin.config.getString("backpack.inventory.name"))) {
             Bson query = eq("UUID", event.getPlayer().getUniqueId().toString());
             Document first = plugin.backpacksCollection.find(query).first();
             Bson backpackInfo = Updates.set("BackpackItems", BukkitSerialization.itemStackArrayToBase64(event.getInventory().getStorageContents()));
@@ -70,9 +70,9 @@ public class BackpackEvents implements Listener {
             Document first = plugin.backpacksCollection.find(query).first();
 
             if (player.hasPermission("jmc.backpack.donator")) {
-                backpack = Bukkit.createInventory(null, 54, format("&aBackpack"));
+                backpack = Bukkit.createInventory(null, 54, format(plugin.config.getString("backpack.inventory.name")));
             } else {
-                backpack = Bukkit.createInventory(null, 27, format("&aBackpack"));
+                backpack = Bukkit.createInventory(null, 27, format(plugin.config.getString("backpack.inventory.name")));
             }
 
             if (!first.getString("BackpackItems").equals("nothing")) {
@@ -88,24 +88,6 @@ public class BackpackEvents implements Listener {
 
             player.openInventory(backpack);
         }
-    }
-
-
-    public ItemStack getBackpack(Player player) {
-
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null || item.getItemMeta() == null) continue;
-
-            try {
-                if (item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(plugin, "backpack"), PersistentDataType.STRING)) {
-                    return item;
-                }
-            } catch (NullPointerException npe) {
-                continue;
-            }
-        }
-
-        return null;
     }
 
     public boolean isBackpack(ItemStack item) {

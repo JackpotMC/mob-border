@@ -34,7 +34,10 @@ public class AcidRain {
                     }
                 }
 
-                Bukkit.getOnlinePlayers().forEach(player -> checkAndDamage(player));
+                Bukkit.getOnlinePlayers().forEach(player -> {
+                    if (player.getWorld().getName().equalsIgnoreCase("lobby")) return;
+                    checkAndDamage(player);
+                });
 
                 i++;
 

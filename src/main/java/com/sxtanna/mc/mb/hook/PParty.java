@@ -1,7 +1,6 @@
 package com.sxtanna.mc.mb.hook;
 
 import com.sxtanna.mc.mb.MobBorderPlugin;
-import com.sxtanna.mc.mb.data.MobBorderEntity;
 import com.sxtanna.mc.mb.util.ColorUtil;
 import me.hexedhero.pp.api.PinataSpawnEvent;
 import org.bukkit.Bukkit;
@@ -14,21 +13,11 @@ public record PParty(@NotNull MobBorderPlugin plugin) implements Listener {
 
     @EventHandler
     public void onSpawn(@NotNull final PinataSpawnEvent event) {
-        final var pinata = event.getPinata().getEntity();
-        if (pinata == null) {
-            return;
-        }
 
-        final var entity = this.plugin.getEntity()
-                .flatMap(MobBorderEntity::live)
-                .orElse(null);
-        if (entity == null) {
-            return;
-        }
 
-        pinata.teleport(entity);
+        event.getPinata().getEntity().teleport(plugin.getEntity().get().location());
         for (Player p : Bukkit.getOnlinePlayers()) {
-            p.sendTitle(ColorUtil.getHex("&#65ff00A&#6aff09C&#70ff12I&#75ff1bD &#7bff25R&#80ff2eA&#86ff37I&#8bff40N"), null, 10, 60, 10);
+            p.sendTitle(ColorUtil.getHex("#ab0101P#c8581ei#e5b13bn#f3ff51a#96ff32t#3aff14a#00de16 #00894fP#003388a#1d00aar#6300aat#aa00aay"), null, 10, 60, 10);
         }
     }
 
